@@ -20,7 +20,7 @@
   "現在我們有 4 個 what-if 同時擺在桌上。注意一件事：同樣的 fair value 100、同樣的 4 個選項 — 在不同的條件組合下，合理答案完全不同。沒有一個 quote 是『正確答案』，每一個都會在某些 market state 下變成最好的選擇。這正是 market maker 真正在做的事 — 不是把模型算更準，而是在當下這個市場狀態下，決定要不要承擔這筆風險、用什麼價格、多少 size、什麼時候停。接下來 50 分鐘，我們就是要把這個『取決於市場狀態的決策過程』，一步一步拆開來看。",
   "如果我們在課堂上學到 Black-Scholes，直覺上好像很多問題都被解掉了。你有 fair value，你有 Greeks，你知道怎麼做 delta hedge，甚至在理論裡可以複製 payoff。那為什麼一個 market making desk 還需要 trader？這個問題不是在質疑 Black-Scholes 的正確性。實務上，對單一 option、單一時間點，我們仍然常常用 Black-Scholes 的語言在算價格、IV 和 Greeks。真正的問題是：會算 BS price，只解決了 pricing 的一部分；交易員面對的是把 pricing 放進市場後的 risk-taking problem。模型可以告訴你這個 option 在某些假設下值多少錢，但它不會自動告訴你：現在要不要報價、報多寬、掛多少 size、成交後要不要 hedge、hedge 到哪裡、這個 flow 是正常需求還是你被資訊更快的人打了。這頁我會停 5 到 10 秒，問問各位：你們覺得 trader 還需要做什麼？",
   "假設模型告訴你，這個 ATM call 的 theoretical value 是 100。在第一個情境裡，你的 book 很乾淨，futures spread 很窄，市場沒有特別快，最近成交也都很正常。這時候你可能願意報得比較正常，例如接近 fair value，size 也可以比較大。但第二個情境完全不同。你已經 long 很多 call，futures 正在快速上漲，hedge cost 變高，而且同一段 strike 剛剛連續有人掃你的 ask。注意，這兩個情境裡，模型 theoretical value 都是 100。問題是：你真的會報一樣的 bid ask 嗎？大部分交易員的答案會是不會。不是因為 100 這個 fair value 沒用，而是因為 quote 不是單純把 fair value 加減一個固定 tick。quote 反映的是你在這個市場狀態下，願意承擔風險的條件。",
-  "這就是今天第一個核心概念：fair value 是模型輸出，quote 是交易決策輸出。Fair value 很重要，因為它提供中心。沒有 fair value，你不知道價格大概在哪裡，也無法討論 edge、Greeks、hedge。但真正掛到市場上的 quote，還要反映很多東西。你現在的 inventory 是不是已經偏了？成交後 hedge 是否容易？最近 flow 是正常需求，還是每次成交後價格都往不利方向走？市場速度是不是快到你的 quote 很容易 stale？流動性是不是足夠讓你在出事時退出？所以 quote 不是 fair value 後面機械地加一個 spread。quote 是交易員把模型輸出放回真實市場後，對風險承擔條件做出的選擇。這也是為什麼 market maker 的問題不是單純「這個 option 值多少」，而是「在現在這個 market state，我願意用什麼價格、多少 size、承擔什麼方向的風險」。到這裡，我們已經看到 fair value 進入交易室後，第一件事是變成 quote。下一步要問的是：為什麼模型世界和交易世界會有這麼大的差距？這要從 PDE 世界和 P&L 世界的假設差異開始。",
+  "假設模型告訴你，這個 ATM call 的 theoretical value 是 100。在第一個情境裡，你的 book 很乾淨，futures spread 很窄，市場沒有特別快，最近成交也都很正常。這時候你可能願意報得比較正常，例如接近 fair value，size 也可以比較大。但第二個情境完全不同。你已經 long 很多 call，futures 正在快速上漲，hedge cost 變高，而且同一段 strike 剛剛連續有人掃你的 ask。注意，這兩個情境裡，模型 theoretical value 都是 100。問題是：你真的會報一樣的 bid ask 嗎？大部分交易員的答案會是不會。不是因為 100 這個 fair value 沒用，而是因為 quote 不是單純把 fair value 加減一個固定 tick。quote 反映的是你在這個市場狀態下，願意承擔風險的條件。",
   "進入第一章。前面我們用一個簡單例子看到，同一個 ATM call 理論價都是 100，但在乾淨市場和壓力市場裡，合理 quote 不一樣。這個落差不是 quote 技巧的問題，是兩個世界的問題。PDE 世界要回答的是 fair value — 它在一組乾淨假設下，給我們定價中心、Greeks 和 hedging intuition。P&L 世界要回答的是 risk-taking — 它在有摩擦、有對手選擇、有流動性限制的市場裡，決定要不要報價、報多寬、多大 size、要不要 hedge。這一章我會帶各位看清楚這兩個世界的假設差在哪裡，為什麼模型給的乾淨答案進入交易室會走樣，並且讓 gap risk、replication tracking error 這些聽起來很抽象的詞，變成 P&L 上具體看得見的東西。",
   "Black-Scholes 的假設不是幼稚，而是必要的抽象。沒有這些抽象，我們很難建立一個乾淨的定價基準，也很難推導 Greeks 和 hedging intuition。但是 market maker 真正的 P&L，通常就發生在這些假設被打破的地方。理論上你可以 continuous hedge，實務上你只能 discrete hedge，而且每一次 hedge 都要付 spread、fee、slippage。理論上 volatility 是一個參數，實務上你面對的是整張 vol surface，而且它會隨 underlying、flow、event、expiry 一起變形。理論上流動性不受限制，實務上你最想 hedge 的時候，futures spread 可能變寬，depth 可能變薄。理論上沒有 latency，實務上你的 quote 可能在 underlying 已經動了之後，還停留在上一個 market state。所以這頁的重點不是「模型假設不真實」這句廢話。真正的重點是：模型為了得到 fair value 而拿掉的東西，正是 trader 需要定價與管理的東西。可以順便丟一個問題給學生：這些摩擦如果只能挑一個最容易殺死 market maker，你會挑哪一個？我的答案會是它們通常一起發生：行情快的時候 latency 變重要，latency 變重要時 quote 容易 stale，stale 時成交更可能 toxic，toxic 時你最需要 hedge，但這時 liquidity 正在消失。",
   "先看最直觀的例子：gap risk。在 PDE 的直覺裡，價格是連續變動的，所以你可以一路調整 delta hedge。underlying 漲一點，你調一點；跌一點，你再調一點。這是 dynamic replication 的核心直覺。但真實市場可能不是這樣。週五收盤時，你的 delta 可能接近 0。週末發生事件，週一開盤 underlying 直接 gap down 3%，同時 implied vol 往上跳，流動性也變差。這時候問題不是你 hedge 慢，而是中間根本沒有價格，也沒有市場。你不能在不存在的成交點上調整 hedge。所以 delta neutral 並不是一個絕對保護。它只代表在當下 market state 和當下模型切面裡，你的一階方向曝險接近 0。當市場用跳躍的方式移動，且 vol surface 同時重估時，風險會從你沒有 hedge 機會的地方冒出來。這也順手埋下後面 Section 6 的伏筆：delta neutral 是 local 的，市場如果不是沿著小步連續路徑移動，中性狀態會很快失效。",
@@ -3660,6 +3660,31 @@
 
 
   /* ============================================================ */
+  /* Title-only slide (centered)                                   */
+  /* ============================================================ */
+  .slide-only-title {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    text-align: center;
+  }
+  .slide-only-title .onlytitle {
+    font-size: 144px;
+    font-weight: 600;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    color: var(--fg);
+    margin: 0;
+    text-wrap: balance;
+  }
+  .slide-only-title .onlytitle .em { color: var(--accent); }
+
+  /* Case B placeholder for Simple Quote split reveal */
+  .state-card.placeholder { visibility: hidden; }
+
+
+  /* ============================================================ */
   /* Title slide motto (fuzzy-control seed)                        */
   /* ============================================================ */
   .title-main .motto {
@@ -4099,14 +4124,9 @@
       <div class="title-main">
         <h1 class="display">從 PDE<span class="arrow">→</span>P&amp;L</h1>
         <p class="subtitle">選擇權造市商的定價、避險與生存邏輯</p>
-        <p class="motto">做得多 · 差不多對 · 不要犯大錯</p>
       </div>
 
       <div class="title-foot">
-        <p class="hook">
-          如果只需要會算 Black-Scholes 就能造市，<br>
-          <span class="ask">那 market maker 何必需要 trader？</span>
-        </p>
         <div class="title-meta">
           Section 0 / 8<br>
           <span style="color:var(--fg-mute)">Opening</span>
@@ -4119,57 +4139,8 @@
   <!-- Slide MM-1 · Market maker 是什麼                              -->
   <!-- ============================================================ -->
   <section data-screen-label="MM-1 · Market maker 是什麼">
-    <div class="slide-mm">
-      <div class="std-head">
-        <div>
-          <div class="eyebrow"><span class="dot"></span>Section 0 · 開講前 · Market maker 是什麼</div>
-          <h2 class="h-title">Market maker <span class="em">是什麼</span>？</h2>
-          <p class="kicker">同時掛 <em>bid</em> 與 <em>ask</em>，被市場選中就成交 — 提供 liquidity，收 spread 作為承擔風險的補償。</p>
-        </div>
-        <div class="page-meta dim">0-2</div>
-      </div>
-
-      <div class="slide-body">
-        <div class="mm-quote-viz">
-          <div class="mm-quote-bar">
-            <div class="col bid">
-              <span class="tag">BID</span>
-              <span class="val">99</span>
-              <span class="arrow-row">↑ 打 bid</span>
-              <span class="who">想賣的人<br>來打 bid</span>
-            </div>
-            <div class="col fair">
-              <span class="tag">FAIR</span>
-              <span class="val">100</span>
-              <span class="arrow-row">模型</span>
-              <span class="who">理論價<br>(BS / 模型)</span>
-            </div>
-            <div class="col ask">
-              <span class="tag">ASK</span>
-              <span class="val">101</span>
-              <span class="arrow-row">↑ 打 ask</span>
-              <span class="who">想買的人<br>來打 ask</span>
-            </div>
-          </div>
-          <div class="mm-bullets">
-            <div class="b">
-              <span class="k">01 · 報價</span>
-              <span class="v">同時掛 <em>bid 與 ask</em>，承諾在自己價格成交。</span>
-            </div>
-            <div class="b">
-              <span class="k">02 · 中立</span>
-              <span class="v">不挑方向 — buyer 來打 ask、seller 來打 bid，兩邊都接。</span>
-            </div>
-            <div class="b">
-              <span class="k">03 · 提供流動性</span>
-              <span class="v">提供 liquidity，收 <em>spread</em> 作為承擔風險的補償。</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="std-foot">
-      </div>
+    <div class="slide-only-title">
+      <h1 class="onlytitle">Market maker <span class="em">是什麼</span>？</h1>
     </div>
   </section>
 
@@ -4178,59 +4149,8 @@
   <!-- Slide MM-2 · 那 market maker 怎麼賺錢                         -->
   <!-- ============================================================ -->
   <section data-screen-label="MM-2 · 那 MM 怎麼賺錢">
-    <div class="slide-mm">
-      <div class="std-head">
-        <div>
-          <div class="eyebrow"><span class="dot"></span>Section 0 · 開講前 · MM 怎麼賺錢</div>
-          <h2 class="h-title">那 market maker <span class="em">怎麼賺錢</span>？</h2>
-          <p class="kicker">課本版本：bid 買進 · ask 賣出 · 留下 spread。但這只是<em>理想版</em>。</p>
-        </div>
-        <div class="page-meta dim">0-3</div>
-      </div>
-
-      <div class="slide-body">
-        <div class="mm-flow">
-          <div class="mm-flow-steps">
-            <div class="mm-flow-step buy">
-              <span class="tag">買 @ bid</span>
-              <span class="val">99</span>
-            </div>
-            <span class="mm-flow-arrow">→</span>
-            <div class="mm-flow-step">
-              <span class="tag">持有</span>
-              <span class="val">···</span>
-            </div>
-            <span class="mm-flow-arrow">→</span>
-            <div class="mm-flow-step sell">
-              <span class="tag">賣 @ ask</span>
-              <span class="val">101</span>
-            </div>
-            <span class="mm-flow-eq">=</span>
-            <div class="mm-flow-result">+2</div>
-          </div>
-
-          <div class="mm-but">
-            <span class="mm-but-lbl">但是 —</span>
-            <div class="mm-but-caveats">
-              <div class="c">
-                <span class="k">INVENTORY</span>
-                只買到、沒賣出 → <em style="color:var(--accent);font-style:normal;">部位偏掉</em>
-              </div>
-              <div class="c">
-                <span class="k">市場移動</span>
-                成交完 underlying 動了 → <em style="color:var(--accent);font-style:normal;">fair value 不再是 100</em>
-              </div>
-              <div class="c">
-                <span class="k">HEDGE COST</span>
-                hedge 要付 spread / slippage → <em style="color:var(--accent);font-style:normal;">2 點被吃掉</em>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="std-foot">
-      </div>
+    <div class="slide-only-title">
+      <h1 class="onlytitle">那 market maker <span class="em">怎麼賺錢</span>？</h1>
     </div>
   </section>
 
@@ -4272,9 +4192,6 @@
         <div class="qc-whatif future"><span class="idx">3</span><span class="cond">累積 position <em>2000 口</em></span></div>
         <div class="qc-whatif future"><span class="idx">4</span><span class="cond"><em>1 小時後</em>結算</span></div>
       </div>
-      <div class="qc-foot">
-        <p class="prompt"><span class="em">舉手投票</span> — 3 秒內：A、B、C、D。</p>
-      </div>
     </div>
   </section>
 
@@ -4299,9 +4216,6 @@
         <div class="qc-whatif future"><span class="idx">2</span><span class="cond">過去 1 分鐘賣了 <em>200 口</em></span></div>
         <div class="qc-whatif future"><span class="idx">3</span><span class="cond">累積 position <em>2000 口</em></span></div>
         <div class="qc-whatif future"><span class="idx">4</span><span class="cond"><em>1 小時後</em>結算</span></div>
-      </div>
-      <div class="qc-foot">
-        <p class="prompt">Hedge cost 變高了 — <span class="em">還報 99/101 嗎</span>？</p>
       </div>
     </div>
   </section>
@@ -4328,9 +4242,6 @@
         <div class="qc-whatif future"><span class="idx">3</span><span class="cond">累積 position <em>2000 口</em></span></div>
         <div class="qc-whatif future"><span class="idx">4</span><span class="cond"><em>1 小時後</em>結算</span></div>
       </div>
-      <div class="qc-foot">
-        <p class="prompt">ask 連續被打 — <span class="em">flow 可能是 toxic 的</span>，還繼續報嗎？</p>
-      </div>
     </div>
   </section>
 
@@ -4355,9 +4266,6 @@
         <div class="qc-whatif past"><span class="idx">2</span><span class="cond">過去 1 分鐘賣了 <em>200 口</em></span></div>
         <div class="qc-whatif now"><span class="idx">3</span><span class="cond">累積 position <em>2000 口</em></span></div>
         <div class="qc-whatif future"><span class="idx">4</span><span class="cond"><em>1 小時後</em>結算</span></div>
-      </div>
-      <div class="qc-foot">
-        <p class="prompt">Inventory 已滿 — A / B / C / D 都不太對。<span class="em">真正的解，可能不在這 4 個選項裡⋯</span></p>
       </div>
     </div>
   </section>
@@ -4384,9 +4292,6 @@
         <div class="qc-whatif past"><span class="idx">3</span><span class="cond">累積 position <em>2000 口</em></span></div>
         <div class="qc-whatif now"><span class="idx">4</span><span class="cond"><em>1 小時後</em>結算</span></div>
       </div>
-      <div class="qc-foot">
-        <p class="prompt">Gamma 爆、pin risk 大 — <span class="em">還想接 flow 嗎</span>？</p>
-      </div>
     </div>
   </section>
 
@@ -4412,9 +4317,6 @@
         <div class="qc-whatif past"><span class="idx">3</span><span class="cond">累積 position <em>2000 口</em></span></div>
         <div class="qc-whatif past"><span class="idx">4</span><span class="cond"><em>1 小時後</em>結算</span></div>
       </div>
-      <div class="qc-foot final">
-        <p class="prompt">同樣 fair value · 同樣 4 個選項 — <span class="em">合理答案完全不同</span>。</p>
-      </div>
     </div>
   </section>
 
@@ -4433,17 +4335,6 @@
           那 <span class="nb">market maker</span> 何必需要 <span class="accent-line nb">trader</span>？
         </h2>
       </div>
-
-      <div class="q-foot">
-        <div class="tag-row">
-          <span class="tag">模型已給 fair value</span>
-          <span class="tag-sep">·</span>
-          <span class="tag">Greeks 可衡量風險</span>
-          <span class="tag-sep">·</span>
-          <span class="tag">Delta hedge 可複製 payoff</span>
-        </div>
-        <p class="ask">那 trader 還要做什麼？</p>
-      </div>
     </div>
   </section>
 
@@ -4455,9 +4346,42 @@
           <div class="eyebrow"><span class="dot"></span>Section 0 · 一個簡單的 quote 問題</div>
           <h2 class="title" style="margin-top:24px;">模型說這個 ATM call 值 100，<br>我該怎麼報價？</h2>
         </div>
-        <div class="theo-bar">
-          <span class="lbl">ATM Call · theoretical value</span>
-          <span class="val">=&nbsp;<span class="num">100</span></span>
+      </div>
+
+      <div class="states-grid">
+        <!-- State A: Calm -->
+        <div class="state-card">
+          <div class="state-tag"><span class="marker calm"></span>MARKET STATE&nbsp;·&nbsp;A</div>
+          <h3 class="state-name">乾淨市場<br><span style="color:var(--fg-mute);font-weight:400;font-size:32px;">Clean</span></h3>
+          <ul class="state-list">
+            <li>book 很乾淨，沒有方向偏斜</li>
+            <li>futures spread 很窄</li>
+            <li>market 平穩</li>
+            <li>最近 flow 都是正常需求</li>
+          </ul>
+        </div>
+
+        <!-- State B: Stressed -->
+        <div class="state-card stressed placeholder">
+          <div class="state-tag"><span class="marker hot"></span>MARKET STATE&nbsp;·&nbsp;B</div>
+          <h3 class="state-name">壓力市場<br><span style="color:var(--fg-mute);font-weight:400;font-size:32px;">Stressed</span></h3>
+          <ul class="state-list stressed">
+            <li>已經 long 很多 call</li>
+            <li>futures 正在快速上漲</li>
+            <li>hedge cost 變高</li>
+            <li>同一段 strike 剛剛連續被掃 ask</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section data-screen-label="03 Simple Quote · reveal">
+    <div class="slide-states">
+      <div class="states-head">
+        <div>
+          <div class="eyebrow"><span class="dot"></span>Section 0 · 一個簡單的 quote 問題</div>
+          <h2 class="title" style="margin-top:24px;">模型說這個 ATM call 值 100，<br>我該怎麼報價？</h2>
         </div>
       </div>
 
@@ -4486,75 +4410,9 @@
           </ul>
         </div>
       </div>
-
-      <div class="states-foot">
-        <p class="ask">兩個情境 fair value 都是 100，<span class="em">quote 應該一樣嗎？</span></p>
-      </div>
     </div>
   </section>
 
-  <!-- ============== Slide 0-4｜From Pricing to Risk-Taking ============== -->
-  <section data-screen-label="04 Pricing to Risk-Taking">
-    <div class="slide-flow">
-      <div class="flow-head">
-        <div>
-          <div class="eyebrow"><span class="dot"></span>Section 0 · 從定價到承擔風險</div>
-          <h2 class="flow-title">
-            Fair value 是<span class="em">模型輸出</span>，<br>
-            quote 是<span class="em">交易決策輸出</span>。
-          </h2>
-        </div>
-        <div class="page-meta dim">0-12</div>
-      </div>
-
-      <div class="flow-grid">
-        <!-- Col 1: Fair value -->
-        <div class="flow-col">
-          <div class="flow-step">01 · MODEL OUTPUT</div>
-          <h3 class="flow-label">Fair Value</h3>
-          <p class="small">定價中心。<br>沒有它，無法討論 edge、Greeks、hedge。</p>
-          <div class="flow-mono" style="font-size:48px; color:var(--fg); margin-top:32px;">= 100</div>
-        </div>
-
-        <!-- Col 2: Adjustments -->
-        <div class="flow-col">
-          <div class="flow-step">02 · MARKET STATE</div>
-          <h3 class="flow-label"><span class="accent">＋</span>&nbsp;Risk-Taking Conditions</h3>
-          <div class="flow-mono">
-            <div><span class="plus">+</span>Edge</div>
-            <div><span class="plus">+</span>Inventory Adjustment</div>
-            <div><span class="plus">+</span>Hedge Cost</div>
-            <div><span class="plus">+</span>Flow / Toxicity Buffer</div>
-            <div><span class="plus">+</span>Liquidity &amp; Latency Buffer</div>
-          </div>
-        </div>
-
-        <!-- Col 3: Quote -->
-        <div class="flow-col">
-          <div class="flow-step">03 · TRADING DECISION</div>
-          <h3 class="flow-label"><span class="accent">Quote</span></h3>
-          <div class="flow-quote">
-            <div class="row"><span class="k">bid</span><span>—</span></div>
-            <div class="row"><span class="k">ask</span><span>—</span></div>
-            <div class="row"><span class="k">size</span><span>—</span></div>
-            <div class="row"><span class="k">or cancel</span><span>×</span></div>
-          </div>
-        </div>
-      </div>
-
-      <div class="flow-foot">
-        <p class="closer-zh">
-          Fair value 給你<span class="em">定價中心</span>；<br>
-          quote 表達你願意<span class="em">承擔風險的條件</span>。
-        </p>
-        <p class="closer-en">
-          Pricing asks: what is it worth?
-          Market making asks: under what conditions
-          am I willing to trade it?
-        </p>
-      </div>
-    </div>
-  </section>
 
   <!-- ============================================================ -->
   <!-- Chapter 1 · PDE vs P&L                                       -->
@@ -6911,7 +6769,6 @@
 
       <div class="fuzzy-kicker">
         <p class="big"><span class="em">不要犯大錯</span>，<br>比每次都最準更重要。</p>
-        <p class="motto">做得多 · 差不多對 · 不要犯大錯</p>
       </div>
     </div>
   </section>
