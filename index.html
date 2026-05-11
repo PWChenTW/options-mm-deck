@@ -23,7 +23,6 @@
   "假設模型告訴你，這個 ATM call 的 theoretical value 是 100。在第一個情境裡，你的 book 很乾淨，futures spread 很窄，市場沒有特別快，最近成交也都很正常。這時候你可能願意報得比較正常，例如接近 fair value，size 也可以比較大。但第二個情境完全不同。你已經 long 很多 call，futures 正在快速上漲，hedge cost 變高，而且同一段 strike 剛剛連續有人掃你的 ask。注意，這兩個情境裡，模型 theoretical value 都是 100。問題是：你真的會報一樣的 bid ask 嗎？大部分交易員的答案會是不會。不是因為 100 這個 fair value 沒用，而是因為 quote 不是單純把 fair value 加減一個固定 tick。quote 反映的是你在這個市場狀態下，願意承擔風險的條件。",
   "進入第一章。從這裡開始，我們把開場那個 quote challenge 的直覺，用比較系統的方式拆開。這章要做兩件事：第一，看清楚 PDE 世界（乾淨假設下能算出 fair value）和 P&L 世界（有摩擦、有對手、有 latency）的差距；第二，把這個差距具體化為 fair value 進入交易室之後會變成怎樣的 quote。重點預告：quote 不是 fair value 加減一 tick，而是一組承擔風險的條件。",
   "Black-Scholes 的假設不是幼稚，而是必要的抽象。沒有這些抽象，我們很難建立一個乾淨的定價基準，也很難推導 Greeks 和 hedging intuition。但是 market maker 真正的 P&L，通常就發生在這些假設被打破的地方。理論上你可以 continuous hedge，實務上你只能 discrete hedge，而且每一次 hedge 都要付 spread、fee、slippage。理論上 volatility 是一個參數，實務上你面對的是整張 vol surface，而且它會隨 underlying、flow、event、expiry 一起變形。理論上流動性不受限制，實務上你最想 hedge 的時候，futures spread 可能變寬，depth 可能變薄。理論上沒有 latency，實務上你的 quote 可能在 underlying 已經動了之後，還停留在上一個 market state。所以這頁的重點不是「模型假設不真實」這句廢話。真正的重點是：模型為了得到 fair value 而拿掉的東西，正是 trader 需要定價與管理的東西。可以順便丟一個問題給學生：這些摩擦如果只能挑一個最容易殺死 market maker，你會挑哪一個？我的答案會是它們通常一起發生：行情快的時候 latency 變重要，latency 變重要時 quote 容易 stale，stale 時成交更可能 toxic，toxic 時你最需要 hedge，但這時 liquidity 正在消失。",
-  "先看最直觀的例子：gap risk。在 PDE 的直覺裡，價格是連續變動的，所以你可以一路調整 delta hedge。underlying 漲一點，你調一點；跌一點，你再調一點。這是 dynamic replication 的核心直覺。但真實市場可能不是這樣。週五收盤時，你的 delta 可能接近 0。週末發生事件，週一開盤 underlying 直接 gap down 3%，同時 implied vol 往上跳，流動性也變差。這時候問題不是你 hedge 慢，而是中間根本沒有價格，也沒有市場。你不能在不存在的成交點上調整 hedge。所以 delta neutral 並不是一個絕對保護。它只代表在當下 market state 和當下模型切面裡，你的一階方向曝險接近 0。當市場用跳躍的方式移動，且 vol surface 同時重估時，風險會從你沒有 hedge 機會的地方冒出來。這也順手埋下後面 Section 6 的伏筆：delta neutral 是 local 的，市場如果不是沿著小步連續路徑移動，中性狀態會很快失效。",
   "假設 theoretical value 是 100。這裡有四種可能的 quote decision。在正常市場裡，你可能報 99 / 101，size 50。這代表市場平穩、hedge 成本可控、book 也沒有明顯壓力。如果你的 inventory 已經偏了，例如你不想再買更多同方向風險，你可能把某一邊 quote 拉遠，size 也縮小。不是因為 fair value 變了，而是你的風險承擔能力變了。如果市場很快、flow 很毒、quote 很容易 stale，你可能需要更寬的 spread、更小的 size。你要先確保成交後不會立刻被 adverse selection 打穿。最後，有些時候最好的 quote 不是報更寬，而是直接撤。market maker 不是永遠都要報價。當 market state 超出你能定價與 hedge 的範圍時，不成交本身也是一個交易決策。所以哪個是正確報價？答案不是某一個固定數字。答案取決於 market state。",
   "很多人在剛開始想 market making 時，會把 quote 想成一個 bid ask spread。但實務上，quote 不是一個價格，而是一組交易條件。你不只是決定 bid 和 ask，還要決定每一邊掛多少 size。你要不要兩邊 size 一樣？如果你已經有很多 long call，你還想在 bid 上掛大 size 嗎？如果 ask 被打，你是否願意繼續補 ask，還是要降低 size？你也要決定 quote refresh 的速度，以及什麼情況要撤單。市場突然變快，underlying 跳動超過某個範圍，hedge instrument spread 變寬，或某一段 strike 被連續掃單，這些都可能讓你不想繼續用原本的 quote 承擔風險。所以好的 quote 不是被動等人來打。它其實是在選擇 flow：我願意跟什麼樣的對手、在什麼樣的市場狀態下、用多少 size 成交。",
   "第一個 quote adjustment 來源是 inventory。假設模型說這個 call 值 100。如果你的 book 很乾淨，你可能願意正常報雙邊。但如果你已經 long 很多同一個 expiry、同一段 strike 的 calls，你要問的就不是「這個 call 值多少」而已。你要問的是：如果我再買一筆，整本 book 會變成什麼形狀？我的 gamma、vega、skew exposure 會不會集中？如果 underlying 繼續往同一個方向走，我的 delta 會不會快速長出來？如果 vol surface 重新定價，我是不是會在同一區域被打穿？所以你可能把 bid 拉遠或縮小 bid size，讓自己比較不容易再買到同方向風險。相反地，你可能比較願意在 ask 上賣出一些，幫 book 回到比較舒服的位置。注意，這不是說 fair value 從 100 變成 96。Fair value 還是 100。改變的是你願意繼續增加這種風險的條件。Market maker 提供流動性時，其實在出租自己的 risk capacity。當某種風險已經太滿，下一筆同方向交易就需要更好的價格補償。",
@@ -4480,67 +4479,6 @@
 
         <div class="row left">fair value</div>
         <div class="row right"><span class="em">executable quote</span></div>
-      </div>
-
-      <div class="std-foot">
-      </div>
-    </div>
-  </section>
-
-  <!-- ============== Slide 1-3｜Gap Risk ============== -->
-  <section data-screen-label="07 Gap Risk">
-    <div class="slide-std">
-      <div class="std-head">
-        <div>
-          <div class="eyebrow"><span class="dot"></span>Section 1 · 案例 · Gap Risk</div>
-          <h2 class="h-title">如果市場直接跳空，<br>中間那些 hedge <span class="em">在哪裡做</span>？</h2>
-        </div>
-        <div class="page-meta dim">1-3</div>
-      </div>
-
-      <div class="gap-stack">
-        <!-- PDE intuition -->
-        <div class="gap-row">
-          <div class="row-label">
-            <div class="tag">PDE INTUITION</div>
-            <div class="desc mute">價格連續變動<br>delta 一路調整</div>
-          </div>
-          <div class="timeline-pde">
-            <svg viewBox="0 0 1200 110" preserveAspectRatio="none">
-              <path d="M 0 70 C 100 40, 200 90, 300 60 S 500 30, 600 55 S 800 80, 900 45 S 1100 25, 1200 50"
-                    stroke="#a39d91" stroke-width="1.5" fill="none"/>
-              <!-- hedge dots along path -->
-              <circle cx="80"   cy="52" r="4" fill="#ece8e1"/>
-              <circle cx="200"  cy="78" r="4" fill="#ece8e1"/>
-              <circle cx="320"  cy="58" r="4" fill="#ece8e1"/>
-              <circle cx="450"  cy="42" r="4" fill="#ece8e1"/>
-              <circle cx="600"  cy="55" r="4" fill="#ece8e1"/>
-              <circle cx="730"  cy="68" r="4" fill="#ece8e1"/>
-              <circle cx="870"  cy="50" r="4" fill="#ece8e1"/>
-              <circle cx="1020" cy="35" r="4" fill="#ece8e1"/>
-              <circle cx="1160" cy="48" r="4" fill="#ece8e1"/>
-            </svg>
-          </div>
-        </div>
-
-        <!-- P&L reality -->
-        <div class="gap-row">
-          <div class="row-label">
-            <div class="tag">P&amp;L REALITY</div>
-            <div class="desc">中間沒有價格<br>也沒有 hedge 機會</div>
-          </div>
-          <div class="timeline-pnl">
-            <div class="seg left">
-              <span class="lbl">週五收盤 · delta ≈ 0</span>
-              <span class="marker"></span>
-            </div>
-            <div class="void">NO MARKET · WEEKEND</div>
-            <div class="seg right">
-              <span class="marker"></span>
-              <span class="lbl">週一開盤 · gap -3%、IV ↑</span>
-            </div>
-          </div>
-        </div>
       </div>
 
       <div class="std-foot">
