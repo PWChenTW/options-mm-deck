@@ -13,11 +13,13 @@
   "如果我們在課堂上學到 Black-Scholes，直覺上好像很多問題都被解掉了。你有 fair value，你有 Greeks，你知道怎麼做 delta hedge，甚至在理論裡可以複製 payoff。那為什麼一個 market making desk 還需要 trader？這個問題不是在質疑 Black-Scholes 的正確性。實務上，對單一 option、單一時間點，我們仍然常常用 Black-Scholes 的語言在算價格、IV 和 Greeks。真正的問題是：會算 BS price，只解決了 pricing 的一部分；交易員面對的是把 pricing 放進市場後的 risk-taking problem。模型可以告訴你這個 option 在某些假設下值多少錢，但它不會自動告訴你：現在要不要報價、報多寬、掛多少 size、成交後要不要 hedge、hedge 到哪裡、這個 flow 是正常需求還是你被資訊更快的人打了。這頁我會停 5 到 10 秒，問問各位：你們覺得 trader 還需要做什麼？",
   "假設模型告訴你，這個 ATM call 的 theoretical value 是 100。在第一個情境裡，你的 book 很乾淨，futures spread 很窄，市場沒有特別快，最近成交也都很正常。這時候你可能願意報得比較正常，例如接近 fair value，size 也可以比較大。但第二個情境完全不同。你已經 long 很多 call，futures 正在快速上漲，hedge cost 變高，而且同一段 strike 剛剛連續有人掃你的 ask。注意，這兩個情境裡，模型 theoretical value 都是 100。問題是：你真的會報一樣的 bid ask 嗎？大部分交易員的答案會是不會。不是因為 100 這個 fair value 沒用，而是因為 quote 不是單純把 fair value 加減一個固定 tick。quote 反映的是你在這個市場狀態下，願意承擔風險的條件。",
   "這就是今天第一個核心概念：fair value 是模型輸出，quote 是交易決策輸出。Fair value 很重要，因為它提供中心。沒有 fair value，你不知道價格大概在哪裡，也無法討論 edge、Greeks、hedge。但真正掛到市場上的 quote，還要反映很多東西。你現在的 inventory 是不是已經偏了？成交後 hedge 是否容易？最近 flow 是正常需求，還是每次成交後價格都往不利方向走？市場速度是不是快到你的 quote 很容易 stale？流動性是不是足夠讓你在出事時退出？所以 quote 不是 fair value 後面機械地加一個 spread。quote 是交易員把模型輸出放回真實市場後，對風險承擔條件做出的選擇。這也是為什麼 market maker 的問題不是單純「這個 option 值多少」，而是「在現在這個 market state，我願意用什麼價格、多少 size、承擔什麼方向的風險」。到這裡，我們已經看到 fair value 進入交易室後，第一件事是變成 quote。下一步要問的是：為什麼模型世界和交易世界會有這麼大的差距？這要從 PDE 世界和 P&L 世界的假設差異開始。",
+  "進入第一章。前面我們用一個簡單例子看到，同一個 ATM call 理論價都是 100，但在乾淨市場和壓力市場裡，合理 quote 不一樣。這個落差不是 quote 技巧的問題，是兩個世界的問題。PDE 世界要回答的是 fair value — 它在一組乾淨假設下，給我們定價中心、Greeks 和 hedging intuition。P&L 世界要回答的是 risk-taking — 它在有摩擦、有對手選擇、有流動性限制的市場裡，決定要不要報價、報多寬、多大 size、要不要 hedge。這一章我會帶各位看清楚這兩個世界的假設差在哪裡，為什麼模型給的乾淨答案進入交易室會走樣，並且讓 gap risk、replication tracking error 這些聽起來很抽象的詞，變成 P&L 上具體看得見的東西。",
   "上一章我們用一個簡單例子看到：同一個 ATM call，模型 theoretical value 都是 100，但在乾淨市場和壓力市場裡，合理 quote 可能不一樣。這背後其實不是一個 quote 技巧，而是兩個世界的落差。PDE 世界問的是：在一組乾淨假設下，這個 option 的 fair value 是多少？這個問題非常重要，因為它給我們定價中心、Greeks 和 hedging intuition。但交易室問的是另一個問題：在現在這個市場狀態下，我願意用什麼價格、多少 size，承擔這筆風險？成交以後，我能不能 hedge？hedge 的成本是多少？如果市場突然跳掉，我的 book 會變成什麼樣子？所以第一章要做的不是否定 PDE，而是看清楚：PDE 解的是乾淨世界的定價問題；P&L 發生在摩擦世界的風險承擔問題。",
   "Black-Scholes 的假設不是幼稚，而是必要的抽象。沒有這些抽象，我們很難建立一個乾淨的定價基準，也很難推導 Greeks 和 hedging intuition。但是 market maker 真正的 P&L，通常就發生在這些假設被打破的地方。理論上你可以 continuous hedge，實務上你只能 discrete hedge，而且每一次 hedge 都要付 spread、fee、slippage。理論上 volatility 是一個參數，實務上你面對的是整張 vol surface，而且它會隨 underlying、flow、event、expiry 一起變形。理論上流動性不受限制，實務上你最想 hedge 的時候，futures spread 可能變寬，depth 可能變薄。理論上沒有 latency，實務上你的 quote 可能在 underlying 已經動了之後，還停留在上一個 market state。所以這頁的重點不是「模型假設不真實」這句廢話。真正的重點是：模型為了得到 fair value 而拿掉的東西，正是 trader 需要定價與管理的東西。可以順便丟一個問題給學生：這些摩擦如果只能挑一個最容易殺死 market maker，你會挑哪一個？我的答案會是它們通常一起發生：行情快的時候 latency 變重要，latency 變重要時 quote 容易 stale，stale 時成交更可能 toxic，toxic 時你最需要 hedge，但這時 liquidity 正在消失。",
   "先看最直觀的例子：gap risk。在 PDE 的直覺裡，價格是連續變動的，所以你可以一路調整 delta hedge。underlying 漲一點，你調一點；跌一點，你再調一點。這是 dynamic replication 的核心直覺。但真實市場可能不是這樣。週五收盤時，你的 delta 可能接近 0。週末發生事件，週一開盤 underlying 直接 gap down 3%，同時 implied vol 往上跳，流動性也變差。這時候問題不是你 hedge 慢，而是中間根本沒有價格，也沒有市場。你不能在不存在的成交點上調整 hedge。所以 delta neutral 並不是一個絕對保護。它只代表在當下 market state 和當下模型切面裡，你的一階方向曝險接近 0。當市場用跳躍的方式移動，且 vol surface 同時重估時，風險會從你沒有 hedge 機會的地方冒出來。這也順手埋下後面 Section 6 的伏筆：delta neutral 是 local 的，市場如果不是沿著小步連續路徑移動，中性狀態會很快失效。",
   "Gap risk 是最容易理解的極端情況。但即使市場沒有跳空，實務上的 hedge 也不是理論裡那種無成本、連續、精準的 replication。假設 10:00 你的 delta 是 +20 lots。三分鐘後 futures 動了，delta 變成 +45 lots。你決定 hedge 40 lots，但這個 hedge 不是免費的，你要付 futures spread、fee，還可能有 slippage。接著 market 又反向，delta 變成 -25 lots，你又要 hedge 回來，再付一次成本。在課本裡，dynamic hedging 是複製 payoff 的工具；在交易室裡，它也是一個不斷用成本追蹤風險目標的過程。每次調整都可能讓你的 book 更安全，但也會在 P&L 裡留下痕跡。所以 hedge 不是純粹的保護，它是一個 trade-off：你用交易成本、執行風險和可能的 tracking error，去換取更低的方向曝險。如果你收 1 tick edge，但成交後 hedge 就付掉 1.5 tick 的成本，理論上成交價高於 fair value 也不代表這筆交易真的有 edge。",
   "到這裡，我們可以把第一章收束成一句話：PDE 給我們 fair value，但 P&L 會告訴我們，這個 fair value 進入市場後需要加上哪些保護。交易成本會影響你願意報多寬；latency 會影響你的 quote 會不會 stale；流動性會影響成交後能不能 hedge；gap risk 會影響你能承受多少 overnight 或 event exposure；surface move 會影響你以為中性的 book 是否真的中性。這些都不是 fair value 本身能單獨回答的問題。所以我們下一章要回到第零章的那個 ATM call：模型說 theoretical value 是 100。現在我們已經知道，100 只是中心。真正的問題是：我要怎麼把它轉成 bid、ask、size，甚至決定要不要報價？",
+  "進入第二章。我們現在知道 PDE 世界給的是 fair value，P&L 世界發生在 friction 裡。回到開場那個 ATM call：模型說值 100，我到底該報什麼？這一章要拆的，是 fair value 怎麼變成 quote — 而 quote 不是把 fair value 加減一個 tick，而是把 inventory、hedge cost、flow toxicity、market speed、liquidity 一起合成的決策。我會用幾個案例讓各位看到：同一個 fair value，在不同 market state 下，合理 quote 可能完全不同。這也是 market maker 真正的工作所在 — 不是算出價格，而是在當下市場狀態下，決定要不要承擔這筆風險。",
   "上一章我們看到，PDE 給的是乾淨世界裡的 fair value，但交易室裡的 P&L 發生在有成本、有延遲、有流動性限制的世界。所以現在回到這個問題：如果模型說一個 ATM call 的 theoretical value 是 100，我是不是就應該報 99 / 101？不一定。99 / 101 看起來很自然，因為它以 fair value 為中心，左右各加一個 tick。但這只是在某些市場狀態下可能合理。真正的 quote 還要問：我的 book 現在偏哪邊？成交後能不能 hedge？市場是不是正在變快？最近的 flow 是正常需求，還是每次成交後都往不利方向走？如果出事，我能不能退出？所以 fair value 很重要，但它不是市場上的價格。它只是 quote decision 的中心。沒有 fair value，你不知道中心在哪裡；但只有 fair value，你不知道該不該成交。",
   "假設 theoretical value 是 100。這裡有四種可能的 quote decision。在正常市場裡，你可能報 99 / 101，size 50。這代表市場平穩、hedge 成本可控、book 也沒有明顯壓力。如果你的 inventory 已經偏了，例如你不想再買更多同方向風險，你可能把某一邊 quote 拉遠，size 也縮小。不是因為 fair value 變了，而是你的風險承擔能力變了。如果市場很快、flow 很毒、quote 很容易 stale，你可能需要更寬的 spread、更小的 size。你要先確保成交後不會立刻被 adverse selection 打穿。最後，有些時候最好的 quote 不是報更寬，而是直接撤。market maker 不是永遠都要報價。當 market state 超出你能定價與 hedge 的範圍時，不成交本身也是一個交易決策。所以哪個是正確報價？答案不是某一個固定數字。答案取決於 market state。",
   "很多人在剛開始想 market making 時，會把 quote 想成一個 bid ask spread。但實務上，quote 不是一個價格，而是一組交易條件。你不只是決定 bid 和 ask，還要決定每一邊掛多少 size。你要不要兩邊 size 一樣？如果你已經有很多 long call，你還想在 bid 上掛大 size 嗎？如果 ask 被打，你是否願意繼續補 ask，還是要降低 size？你也要決定 quote refresh 的速度，以及什麼情況要撤單。市場突然變快，underlying 跳動超過某個範圍，hedge instrument spread 變寬，或某一段 strike 被連續掃單，這些都可能讓你不想繼續用原本的 quote 承擔風險。所以好的 quote 不是被動等人來打。它其實是在選擇 flow：我願意跟什麼樣的對手、在什麼樣的市場狀態下、用多少 size 成交。",
@@ -26,6 +28,7 @@
   "第三個 adjustment 是 flow 和 toxicity。Market maker 掛 quote 的時候，不是隨機抽人來交易。對方會選擇在你的 bid 或 ask 成交。這個被選中本身就有資訊。如果有人買你的 ask，可能只是正常 liquidity demand。他需要立即成交，所以願意付 spread。這是 market maker 希望看到的 flow。但如果你連續被打 ask，而且成交後 futures 繼續往上，附近 strikes 也開始被掃，那你就要小心：這可能不是單純 spread capture，而是你的 quote 落後了。可能 underlying 已經動了，可能 surface 正在被重新定價，也可能對方比你更快知道 fair value 變了。這就是 flow toxicity。當你懷疑成交帶有資訊優勢時，你需要更高 edge、更小 size、更快 repricing，甚至直接撤單。這裡的核心不是恐懼成交，而是診斷成交。好的 market making 不是避免所有 trade，而是願意接 normal liquidity demand，同時降低被 toxic flow 選中的機率。",
   "我們可以把 quote adjustment 收成這張 map。Inventory 問的是：我還能不能繼續接同方向風險？如果不能，quote 就要 skew，size 也要改。Hedge cost 問的是：成交後能不能便宜地把 delta 或其他風險處理掉？如果 hedge 成本變高，spread 就需要變寬，size 也要變小。Market speed 問的是：我的 quote 會不會在市場已經動了以後還停在原地？如果會，quote 要更新更快，或者直接降低參與。Flow toxicity 問的是：對方為什麼願意跟我成交？如果每次成交後都往不利方向走，代表我可能被資訊更快的人選中了。Liquidity 問的是：出事時我能不能退出？如果 hedge instrument 或 option book 自己都變薄，size 就不能像平常一樣大。Vol uncertainty 問的是：這張 surface 我有多相信？如果 vol 正在重估，或 event risk 很高，quote 就需要更多 buffer。這張表的重點不是讓學生背六個因素，而是讓他們看到：quote 是交易員把模型輸出、book 狀態、市場摩擦和對手選擇合成後的決策。Spread 不是單純利潤來源，而是 market maker 要求市場支付的風險保費。這六個因素之間會互相放大：fast market 提高 quote stale risk，stale 提高 toxic fill 機率，toxic fill 累積 inventory，inventory 累積又提高 hedge urgency，而 hedge urgency 上升時 liquidity 可能剛好變差。",
   "第二章我們一直站在 quote 送出去之前的角度：fair value 是多少？inventory 怎麼樣？hedge cost 高不高？flow toxic 不 toxic？size 要放多少？但 market making 最有趣的地方是，quote 一旦放進市場，它就會被測試。如果沒成交，可能代表你的價格太保守，也可能只是市場沒有需求。如果成交了，也不一定是好消息。你要問：為什麼是我成交？成交後 underlying、vol、其他 strikes 怎麼走？這筆 fill 是正常 spread capture，還是我的 quote 落後了？所以下一章的主題會從 quote decision 轉到 fill diagnosis。每一筆成交，都是市場對你報價的一次測試。",
+  "進入第三章。上一章我們把 quote 拆成 inventory、hedge cost、flow、market speed、liquidity 的合成決策。但 quote 一旦掛進市場，它就會被測試 — 沒成交可能是價格太保守，也可能市場沒需求；成交也不一定是好消息，因為成交本身帶著資訊。這一章要看的是：fill 怎麼變成 flow diagnosis，怎麼從『有人在我的 ask 成交了 → 我收到 spread』升級成『為什麼是我成交？對方知道什麼？我的下一個 quote 該怎麼動？』。Adverse selection 是 market making 最常被低估的成本，這一章會把它講清楚。",
   "上一章我們站在 quote 送出去之前的角度：fair value 是 100，我要報多少 bid、多少 ask、多少 size？我要不要因為 inventory、hedge cost、market speed 或 flow toxicity 做調整？但 quote 一旦放進市場，就不再只是你的決策。市場會決定要不要跟你成交，也會決定用什麼方式跟你成交。如果你沒有成交，可能是價格太保守，也可能只是市場暫時沒有需求。如果你成交了，也不一定是好事。成交代表有人願意在你的價格跟你交易。那你要問：為什麼是我？對方是單純需要 liquidity，還是他比我更快知道 fair value 已經變了？所以 fill 不是故事結束。fill 是市場對你 quote 的第一次回饋。Quote is an invitation. Fill is selection. Selection contains information.",
   "假設模型說 ATM call theoretical value 是 100，你報 99 / 101。接著 ask 連續被打，三筆成交都在 101。表面上看，你賣在 theoretical value 上方 1 tick，好像每一筆都有 edge。這可能真的是好事：對方需要 immediacy，他願意付 spread，你提供 liquidity，收取 liquidity premium。但同一個現象也可能有完全不同的解讀。如果 ask 被連續打，而且對方沒有停下來，你要懷疑：是不是我的 ask 太便宜？是不是 underlying 已經動了，但我的 quote 還沒更新？是不是 vol surface 正在被重估，對方正在掃我還沒調整的 strikes？所以成交本身不是答案。成交之後市場怎麼走，才會開始告訴你這筆 fill 的品質。成交價高於 theoretical value，只是 paper edge；如果成交後 market immediately moves against you，這個 edge 可能只是 stale quote 的錯覺。",
   "同樣是賣出 ATM call 在 101，成交當下 theoretical value 是 100，paper edge 是 +1 tick。但這筆交易的真正含義，要看成交後市場怎麼走。第一種路徑，futures 沒什麼動，IV 沒什麼動，附近 strikes 也沒有異常成交。這比較像正常 liquidity demand。對方需要立刻買，你提供 liquidity，收 spread。第二種路徑，成交後 futures 立刻上跳。你剛賣出的 call 馬上變貴。這時候你要懷疑：是不是你的 quote lag 了？是不是對方比你更快反應 underlying move？這就是 adverse selection 的典型警訊。第三種路徑，underlying 可能沒有大跳，但附近 calls 也開始被掃，或者同 expiry 某一段 strike 被集中買。這可能代表不是單一 option 的問題，而是那一段 surface、skew、wing 或 event risk 被市場重新定價。所以 fill diagnosis 不是只看成交價。它是 fill pattern 加上 post-fill market reaction。單筆 fill 不足以下結論，但連續 pattern 會變成非常重要的訊號。",
@@ -33,6 +36,7 @@
   "Adverse selection 是 market making 裡最核心、也最容易被初學者低估的問題。你掛 ask 101。對方買走。你看到成交價比 theoretical value 100 高 1 tick，以為自己收了 spread。但如果真正的 fair value 很快更新到 103，你其實不是賣貴，而是賣便宜了。你賣的是舊市場狀態下的價格。這就是 market maker 被資訊更快、反應更快、或風險判斷更好的人選中。你以為你提供 liquidity，但對方可能是在用你的 stale quote 轉移風險。這種損失很傷，因為它會讓 spread capture 看起來存在，但 markout 或 hedge P&L 持續流血。最後你發現：成交很多，spread 看起來也不錯，但每次成交後都往不利方向走，總 P&L 還是不好。問題不是被 informed flow 成交；問題是你沒有收足夠的 edge，卻承擔了 informed flow 的風險。",
   "如果 fill 真的有資訊，那它不應該只是成交明細上的一列資料。它應該回饋到下一個 quote。看到成交後，你會看 post-fill market reaction。市場有沒有往不利方向走？同區域有沒有被掃？成交是不是集中在某一邊？hedge 成本是不是變高？接著做 flow diagnosis。然後下一個 quote 要改：可能是 price move，可能是 spread widen，可能是 bid / ask skew，可能是 size reduce，也可能是某些 strikes 暫時不報。若你懷疑 surface 錯，甚至要回到 vol / skew / wing 的調整。所以 market making 不是每次重新從 fair value 開始，而是一個 feedback loop。上一筆 fill 會影響下一筆 quote，下一筆 quote 又會被下一筆 fill 測試。在 highly competitive market 裡，大家的 pricing model 差異沒有想像中大；差異反而在誰更快辨識 stale quote、誰更會控制 toxic flow、誰更能讓 fill feedback 變成 quote adjustment。",
   "第三章我們把 fill 當成資訊事件：它告訴你 quote 是否合理、flow 是否正常、下一個 quote 是否需要調整。但 fill 還有另一個作用：它會改變你的 book。如果你賣出 20 口 ATM calls，這不是交易紀錄上的一筆成交而已。它會改變你的 delta、gamma、vega，也可能讓風險集中在某一個 expiry 或 strike region。它還會創造新的 hedge demand。這就是為什麼 market making 不能只看單筆 trade。單筆看起來有 edge，不代表整本 book 安全。連續幾筆同方向成交，可能會把你推進一個很不舒服的風險形狀。所以下一章要從 fill 進入 book risk：一筆交易如何被整本 book 吸收，然後變成 Greeks、limits、hedge decision 和風險管理問題。",
+  "進入第四章。Fill 不只是市場對 quote 的回饋，它還會留下 position。Position 進入 book，就會改變整本 portfolio 的風險形狀。這一章要從單筆 trade 切到 book — 每筆都有 edge 不代表整本安全，連續同方向 fills 會把 book 推到特定 risk shape；總 Greeks 中性也不代表局部 bucket 沒爆。我會把 Greeks 當作 risk coordinates 而不是公式表，並且讓各位看到 neutral 為什麼只是 local statement — 這也是後面 hedge 與 residual risk 兩章的伏筆。",
   "上一章我們已經知道，fill 是市場對 quote 的回饋。但 fill 還有另一個層面，它會留下 position。Position 進入 book，就會改變整本 portfolio 的風險形狀。所以這章要處理的不是某一筆交易的 edge，而是這筆交易疊在原本 book 上之後，整體會變成什麼形狀。Market maker 真正要管理的不是 trade 本身，而是 trade 之後留下的 risk shape。我們先看一個最容易誤判的情境：每一筆成交看起來都有 edge，方向卻都一樣。",
   "假設你連續賣出 20 口 ATM call，每一筆成交價都比 theoretical value 高 1 tick。從單筆 trade 的角度看，這非常漂亮：每筆都比模型價貴。但 market maker 不能停在單筆視角。真正要問的是：這 20 筆交易疊起來，整本 book 變成什麼形狀。連續賣 call，short gamma 會增加，short vega 會增加，upside delta 會快速長出來；如果這些 call 又集中在同一 expiry、同一段 strike，風險不是平均分散，而是局部集中。這不是說連續賣 call 一定不好，而是說：單筆 edge 必須放回 book 裡看。Market making 的 P&L 不是單筆獨立相加，因為每一筆都會改變下一筆的風險條件。",
   "所以成交之後，第一件事不是計算單筆 P&L，而是把 trade blotter 翻譯成 risk map。Trade blotter 描述的是歷史：賣了哪個 strike、哪個 expiry、size 多少、成交價多少。這很重要，但它回答的是「我做了什麼」。Risk map 則回答下一個問題：現在 delta 是多少？gamma 集中在哪裡？vega 在哪個 expiry 最大？skew 或 wing exposure 是否集中？underlying 上下移動 1%、2%、3% 時，book 會怎樣？實務上 risk map 不只是加總 Greeks，還會看 scenario P&L、bucket exposure、limit usage、hedge liquidity。Market maker 的下一個決策，是根據整本 book 在下一個市場狀態下的 vulnerability，不是根據剛剛某一筆成交。",
@@ -41,6 +45,7 @@
   "但只有 Greeks snapshot 還不夠。Greeks 是某個時間點的切面，trader 真正想知道的是：市場下一步沿不同路徑走，book 會怎麼變。假設現在總 delta 接近 0，總 vega 也接近 0，但 book 裡有 near expiry short gamma，剛剛又連續賣了一些 upside calls。Scenario A：市場上漲 2%，upside calls 的 delta 變大，需要買 futures hedge，ask 可能繼續被打。Scenario B：市場下跌 2%，IV 上升，skew 變陡，這時 vanna、skew、wing exposure 變得重要。即使起始 vega 接近 0，surface deformation 也會讓你有感。所以 trader 不會只問「現在 delta 是多少」，而是問：在合理的市場路徑下，delta 會怎麼長出來，vega 會在哪裡出現，哪個 bucket 會先撞到 limit。Risk is not a number — risk is a shape under scenarios。",
   "這就帶到第四章最重要的一句話：neutral is local。Delta neutral、vega neutral、甚至某些情況下的 gamma neutral，都不是「沒有風險」的同義詞。它們描述的是：在現在的 underlying、現在這張 vol surface、現在這個模型、現在這個時間點下，某些一階或局部敏感度接近 0。但市場不會停在這個截面上，而且通常不只沿一個軸移動。股市下跌時 IV 可能上升、skew 可能變陡、liquidity 可能變差、flow 可能更單邊。當這些一起發生，原本看起來中性的 book 會重新長出 delta、vega、skew risk。Neutral 不是沒用，它讓你知道當下的一階曝險；但它是風險管理的起點，不是終點。Market maker 不只看 current Greeks，也看 scenario、limit usage、bucket concentration、hedge liquidity。",
   "到這裡，我們完成了一個重要轉換：成交不是單筆 P&L 的結束，而是整本 book risk 的開始。Greeks 是風險座標，scenario 才能讓你看到風險在市場路徑下怎麼變形，而 neutral 只是局部截面。但看見風險之後，下一步不是機械地把所有風險立刻消掉。Hedge 本身有成本、有流動性限制、有執行風險，也可能改變 book 的風險形狀。假設成交後 trading delta = +100 lots。如果 futures spread 很窄、depth 足夠、市場平穩，你可能願意快速 hedge。但如果 futures spread 變寬、市場跳動快、depth 變薄，你真的要立刻 hedge 到 0 嗎？這就是下一章的主題：hedge 不是公式反射，而是條件決策。",
+  "進入第五章。看到 book risk 之後，直覺是 hedge 掉。但 hedge 不是公式反射 — 它本身有成本、有流動性限制、有執行風險，也會改變 book 的風險形狀。這一章要把 hedge 從『機械動作』講成『條件決策』。同樣 +100 delta，在不同 market state 下，合理 hedge 完全不一樣。Hedge 多少、什麼時候、用什麼工具、要不要先 reduce quote 再 hedge — 這些都是這一章要回答的問題。最重要的一個概念：hedge 不是把風險消滅，而是把風險換成另一種形狀。",
   "上一章我們花了不少時間，把單筆 fill 推進整本 book，看到 Greeks 是風險座標，scenario 才看得到變形，而 neutral 只是局部截面。很多人到這一步的第一反應是：既然看到風險，那就 hedge 掉。尤其看到 delta 偏掉，直覺就想 hedge 回 0。但這一步在交易室裡沒有那麼乾淨。看見風險，只代表你知道 book 現在暴露在哪裡；它不代表所有風險都應該立刻、無條件、用任何成本消掉。真正要問的是三件事：這個風險現在有多急？hedge 要付多少 spread、slippage、market impact？hedge 完會留下什麼新風險？所以 hedge 不是 reflex，而是 risk conversion decision。你用 execution cost 和新的 market exposure，換掉當下 book 裡你最不想持有的風險。",
   "我們用最簡單的例子來看：一連串 option fills 後，trading delta = +100 lots。Case A 裡，futures spread 只有 1 tick，depth 足夠，市場平穩，quote 也沒有明顯 stale。這時候 hedge 成本低，執行風險也可控，留下 delta 的機會成本可能高於 hedge cost，你比較願意快速把一部分 delta 處理掉。Case B 完全不同，spread 變成 3 ticks，depth 變薄，市場正在快速跳動，option ask 又剛剛連續被打。這時候你 aggressively hedge，可能付非常高的 spread 和 slippage；如果市場瞬間反轉，可能剛 hedge 完又要 hedge 回來。更糟的是，這個 delta 可能不是單純 fill delta，而是 toxic flow 或 stale quote 造成的警訊。此時你可能要先 reduce quote、widen、cancel stale orders，再小心處理 hedge，不一定是無腦打到 0。所以同樣 +100 delta，在兩種市場狀態下，合理 hedge decision 不一樣。Delta 是一個數字，但 hedge 是市場狀態下的執行決策。最殘酷的地方是：越需要 hedge 的時候，hedge 往往越貴、越難、越容易出錯。",
   "這和課本裡的 delta hedge 有什麼差別？理論版本裡，delta hedge 是 dynamic replication：價格連續變動，你連續調整；交易沒有成本；underlying 有無限 liquidity；你可以精準把 delta hedge 到 0。但 desk 版本完全不同。你只能離散地 hedge，每一次 hedge 都要付成本。看到 delta、送出 order、order 進市場，中間有 latency。你想 hedge 的 size 可能超過當下 depth。你以為的 delta 也不是神聖數字，它依賴當下 surface、model、snapshot timing，甚至 underlying 是否已經 move。所以實務上的 hedge rule 不是「看到 delta 就歸零」。它更像一個 policy：什麼 delta range 可以忍受？什麼 market state 要立刻降低 exposure？什麼用 passive？什麼必須 aggressive？什麼情況不是先 hedge，而是先 reduce quote 或 stop quoting？In theory, hedge removes exposure；on the desk, hedge transforms exposure at a cost。",
@@ -50,6 +55,7 @@
   "現在我們把這些因素合成一張 decision table。Delta 小、futures spread 又寬，立刻 hedge 可能只是付成本買心理安慰，比較合理的是 monitor，等 delta 變大或 spread 收斂。Delta 中等、spread 窄、depth 足夠，可以 passive hedge 慢慢拉回 target range，因為時間壓力還不大。Delta 大、market move 又快時，留下 delta 的風險可能大過 execution cost，aggressive hedge 才合理。Short gamma 又遇到 trend market，delta 不是靜態數字，它會繼續長，這會提高 hedge priority。Liquidity 變薄、spread 變寬時更微妙：你很想 hedge，但大 size 會 slippage，這時候要切小單，並降低 option quote size。Inventory 接近 limit 時，hedge target 也會變保守，先讓 book 回到安全區。最後一列最重要：如果懷疑 fills 是因為 quote stale 或 toxic flow，單純 hedge 治標不治本 — 你要先 cancel 或 reprice option quotes，否則 hedge 一筆，後面又被同樣錯誤的 quote 打進更多風險。Bad quotes create hedge demand faster than hedging can clean it up。所以 hedge action 不只是送出一筆 order，它經常和 quote control、size control、surface recheck、risk limit 同時發生。",
   "很多人會把 hedge 當作故事結束：看到 delta，hedge 掉，完成。但對 market maker 來說，hedge 本身也要被評估。你原本想降低 +100 delta，最後真的降到目標區間了嗎？只成交到一部分？slippage 是否比預期高？hedge 後市場是否反轉，讓你又要 hedge 回來？hedge 完以後，delta 降了，但 short gamma、vega、skew concentration 是否仍存在？更重要的是，這次 hedge 經驗會回饋到下一次規則。某種 market state 下 aggressive hedge 長期成本太高，threshold 也許要調。某類 toxic fill 經常造成高成本 hedge，那也許不是 hedge rule 的問題，而是 quote rule 或 flow filter 的問題。所以 hedge 也需要 attribution：這是 risk reduction、execution cost 和 residual exposure 三件事的綜合判斷，不是只看 delta 有沒有歸零。這也為第七章的 P&L attribution 埋伏筆 — attribution 不只拆 quote，也要拆 hedge cost 和 hedge timing。",
   "第五章的收束是這句話：hedge 會改變風險的形狀，不會讓風險消失。你可以用 futures 把 delta 降下來，但你付出了 execution cost。你可以降低方向曝險，但仍然有離散 hedge error。你可以把一階風險壓低，但 short gamma、theta、vanna、volga、skew 和 liquidity risk 還在。看左右兩張 risk shape：hedge 之前 directional delta 是最大風險；hedge 之後 delta 接近 0，但 execution cost 已經付出，vanna / volga / gap / liquidity 等高階風險變得明顯可見。這也是為什麼下一章很重要。很多人看到 delta neutral、vega neutral 就以為 book 安全，但中性只是局部截面，市場不是只沿著你 hedge 掉的那條軸移動。下一章我們就要看：為什麼一個看起來已經 hedged、delta 和 vega 都接近 0 的 book，最後還是會虧錢？這是 gamma bleed、surface deformation、gap risk 和 pin risk 共同回答的問題。",
+  "進入第六章。一個 delta、vega 都接近 0 的 book，看起來安全 — 但實務上常常還會虧錢。為什麼？這一章要把『中性』這個詞打開來：neutral 只是局部截面，市場不會只沿著你 hedge 掉的那條軸移動。我會用四個案例組成一個答案 — gamma bleed 講路徑與成本，discrete hedging error 講為什麼同樣 realized vol 結果完全不同，surface deformation 講 vanna / volga / skew，gap 講不可交易的路徑。聽完這四個，各位會明白為什麼 desk 上『我已經 hedge 了』從來不是故事結束。",
   "上一章我們已經把 trading delta 從 +100 hedge 到接近 0。在課本直覺裡，這應該是故事結束 — risk 看起來都被 neutralize 掉了。但 desk 上完全不是這樣。Hedge 不是把風險消滅，它是把風險換成另一種形狀。你壓低了 directional delta，但你也付出了 execution cost；你降低了一階曝險，但 short gamma、theta、vanna / volga、skew、gap、pin 這些風險仍然在 book 裡，而且現在它們的相對重要性反而變大了。所以這一章我要做的事情是：把「hedged book」這個看起來安全的標籤打開來，問你 hedge 完之後，到底還剩下什麼。重點不是嚇人說 hedge 沒用 — hedge 非常有用 — 重點是讓你理解 hedge 的邊界，知道哪些風險不會被 delta hedge 處理掉，並且學會把它們當成 book 的一部分繼續管理。",
   "這頁我把問題講到最尖銳：Delta 接近 0、Vega 接近 0，那為什麼 P&L 還會動？答案是 neutral 描述的是你壓平了什麼，P&L 揭露的是你漏掉了什麼。Delta neutral 通常只代表在當下、當前模型、small move 下，一階方向曝險接近 0；它不保護 gap 或離散 hedge error。Long gamma 聽起來是好事，但如果市場波動不夠大、hedge cost 又高，你可能不是在賺 realized vol，而是在 bleed 成本。Vega neutral 通常指的是 parallel vol shift；但市場真正動的是整張 surface — skew、wing、term structure 一起變，vanna / volga 立刻出來。日內 hedge 完不代表 overnight 安全，event gap、auction gap 沒有可交易的中間價。到期接近時，行權與 settlement 也會把 option risk 轉成 underlying / futures position。所以這頁的核心句子是：Neutral 是對某條你選擇的軸的陳述；損失通常來自你沒選的軸。",
   "在一個個案例展開之前，我先把 hedge 後仍然會影響 P&L 的風險，整理成四個來源。第一類是 path risk — 你不是在連續時間裡無成本 hedge，而是在離散時間裡追蹤一個會動的 delta；hedge timing 不同，realized P&L 就完全不同，這也是 gamma 與 theta 的 trade-off 所在。第二類是 execution risk — 每次 hedge 都有 spread、fee、slippage、latency、liquidity；這是用成本換安全。第三類是 surface risk — underlying 與 IV、skew、wing、term structure 不會單獨動，它們會一起變形，vanna / volga 在這裡發揮作用。第四類是 discontinuity / event risk — gap、auction、settlement、pin、exercise uncertainty，這些不是更高 hedge frequency 可以解決的問題。Residual risk is not noise, it has structure。這四類會出現在後面四個案例裡。",
@@ -59,9 +65,11 @@
   "第四個案例是 gap risk — 這個在第一章已經出現過，當時是用來打破 continuous hedging 的直覺。這裡我把它放回 hedged book 的語境。週五收盤時你的 book 看起來很乾淨，delta 接近 0、hedge 也都做完了。週末發生事件，週一開盤 underlying 直接 gap down 3%、IV 同時跳上、liquidity 變薄。這時候問題不是你 hedge 慢，也不是你不想 hedge — 中間根本沒有可交易的市場。沒有價格、沒有成交、沒有可以逐步調整 delta 的路徑。Delta hedge 保護的是可交易路徑上的風險；gap risk 活在路徑不存在的地方。這一點很重要，因為它告訴你：有些風險不是把 hedge 速度提高就能解決的，它需要用 position size、event limit、vol buffer、scenario analysis 去管理。Faster hedging cannot act where there is no market。",
   "Pin risk 我用 30 秒帶過 — 它是一個很實務、很到期日特有的提醒。當 underlying 在結算日附近停留在 strike 周圍，小小的價格移動會讓 option 在價內 / 價外之間翻轉，delta 變得非常敏感，行權與被指派的結果也可能不確定。對 market maker 來說，到期不是風險自動消失，而是 option risk 被轉換 — 它可能變成 futures 或 spot 的 directional position，特別是在結算制度、auction、行權規則複雜的市場。這頁的核心句子很短：Expiration can transform risk instead of eliminating it。我不會在這裡展開不同市場的結算制度，這是 backup 或 Q&A 的素材；主線仍然是 hedged book 的 residual risk 需要被拆開。",
   "整章收束在這個 transition：如果 hedged book 還會因為 path、cost、surface、gap、pin 產生 P&L，那收盤後只看 total P&L 就完全不夠。今天 P&L = +100 是好的一天嗎？是 quote 收 spread？是 delta 剛好站對方向？是 long gamma 抓到 realized move？是 vega 重估？是 skew 走在你身上？還是只是 hedge cost 沒算到？如果你不把它拆開，你就不知道下一次該繼續做什麼、該停掉什麼。Residual risk 解釋為什麼 P&L 會動；attribution 告訴你該修什麼。所以下一章我們要進 P&L attribution — 把結果拆回可改善的決策。我會從最危險的一個情境開始：今天賺了 +100，但這到底是 edge，還是只是剛好賭對方向？",
+  "進入第七章。如果 hedged book 還會輸，光看 total P&L 就完全不夠。今天賺 +100 是好的一天嗎？我會用具體的 component 拆解告訴你 — 賺錢不等於做對。Attribution 不只是收盤後的會計報表，它應該改變明天的 quote、hedge、limit。這一章三張 slide 會回答三個問題：怎麼拆 P&L？每個 component 對應什麼可改善的決策？以及最重要的 — 怎麼分辨自己賺的是 edge 還是 luck？",
   "進入第七章。我用一個非常具體的場景：今天結束，total P&L = +100。直覺上這是好的一天，今天表現可以了。但這個直覺對 market maker 很危險。如果你只看 total，你不知道這 +100 是 market making 真的有 edge，還是只是 delta 剛好站對方向。把它拆開：spread P&L = -20，代表你今天報價、收 spread、控制 flow 這部分其實在賠錢。Delta P&L = +90，主要靠方向曝險。Vega P&L = +40，vol 重估帶一點。Hedge cost = -10。也就是說，今天 +100 主要是 directional 站對；market making 本業反而漏錢，只是被 delta 蓋過去。這頁要讓學生記住的是：總 P&L 是結果不是診斷，明天市場反轉，這個結構會直接翻負。賺錢不等於做對，賠錢也不等於做錯，關鍵在 component。",
   "所以 desk 真正用來檢視自己的工具是 P&L attribution。它把總 P&L 拆回七個 component，每個 component 對應一個你可以改善的決策。Spread / Edge 對應 quote 是否真的 capture edge — 如果負，可能是 quote 太寬被 cross 不到、太窄被 toxic flow 掃，或者 flow filter 有問題。Delta P&L 對應你是否留下方向曝險 — 它不一定壞，但要知道是有意還是無意。Gamma · Theta 對應 realized move 是否補償 theta 與 hedge cost。Vega 對應 vol level 是否被整體重估。Skew · Wing 對應 surface shape 是否變形。Hedge P&L 對應 hedge frequency 與 execution 品質。Residual 是 model error、latency、data issue、higher-order Greeks，這個 bucket 太大就要回去查 model。重點不是把每個 component 都歸零，而是讓每一塊都有人負責、能被診斷、能被修。",
   "為了讓 attribution 的價值更具體，我用兩天都是 +100 但「結構」完全不同來對比。Day A：Spread +80、Hedge cost -10、Vega +20、Residual +10。這是非常乾淨的 market making day — 主要 P&L 來自報價收 spread，hedge 成本受控，vega 只是次要貢獻，residual 很小代表 model 沒出問題。這種 P&L 結構可重複，明天類似市況，很可能再次賺到。Day B：Spread -20、Delta +120、Hedge cost -30、Residual +30。Total 一樣 +100，但結構非常不健康 — spread 在賠、hedge cost 又高、主要靠 delta 站對方向、residual 還偏大。如果明天市場反轉，Day B 的 P&L 結構會直接翻負，而且 spread 漏的洞會持續存在。Day A 是 edge，Day B 是 luck。Trader 真正要做的，是辨識自己昨天屬於哪一種，並且決定下一個交易日該保留什麼、該修什麼。Attribution 不是收盤後的會計報表，它應該改變明天的 quote、hedge 與 limit。",
+  "進入最後一章。整場的問題終於可以回收：如果 Black-Scholes 是對的，trader 還做什麼？這一章我會做三件事 — 先看真正傷害 market maker 的風險長什麼樣（不是 vol 高，是『沒準備好』的市場狀態）；接著回答 trader 在 system + model 之上負責什麼；最後回到開場那個問題，給一個比『模型不準』更完整的答案。三句帶走：fair value 是模型輸出、quote 是交易決策輸出、P&L 是市場回饋。",
   "進入第八章。如果你問我 market maker 真正怕什麼，不是「市場很波動」這種大方向。波動本身只是 vega 與 gamma 的問題，可以管理。真正會傷的，是「你沒準備好」的市場狀態。Adverse selection — 你以為提供 liquidity，實際是被資訊更快的對手選中，每次成交後都往不利方向走。Stale quote — 你的價格停在上一個 market state，但市場已經 move，看似收 spread 其實賣便宜了。Vol regime shift — 你以為 vol 貴在 short vega，市場其實正在重估整個 risk regime。Liquidity disappearance — 你最想 hedge 的時候，hedge instrument 反而沒 depth，spread 變寬、size 打不出去。Concentration risk — 總 Greeks 中性看起來安全，但局部 strike / expiry bucket 已經爆掉，aggregation 蓋住 concentration。System risk — data delay、quote 錯單、風控失效，這種一次就可能吃掉一整年 edge。這六個的共同特徵：它們都發生在你沒監控、沒 buffer、沒 liquidity 的地方。Risk does not show up where you are looking — it shows up where you are not。",
   "那 trader 在這套 setup 裡到底做什麼？模型會算 fair value，系統會自動報價，pricing engine 比你快、比你穩、不會累。Trader 真正負責的是模型不會回答的那一層 — 風險承擔的條件。什麼時候相信模型、什麼時候 override；quote 要加多少 edge / buffer 才能對得起 risk profile；inventory 到什麼程度要調整報價甚至停掉某些 strikes；什麼 flow 可以接、什麼 flow 是 toxic 要躲；hedge 何時做、做到哪裡、用什麼工具；昨天的 P&L 哪一塊是 edge、哪一塊是 luck；什麼市場狀態下要 reduce size、widen、甚至 stop quoting；以及把 attribution 真的帶回明天的 quote 與 hedge 規則裡。Trader 的價值不是手算 BS，也不是比 model 算得快，而是把 model 放回有摩擦、有對手選擇、有流動性限制的世界裡，做一連串風險承擔決策。",
   "現在我們可以回到開場那個問題：如果 Black-Scholes 是對的，為什麼 market maker 還需要 trader？開場時你們可能會想到「模型不準」「有交易成本」「波動率不是常數」「需要人工判斷」。這些都對，但答案還不完整。經過這六章，我希望你們現在的答案升級成這三句：fair value 是模型輸出 — 它給我們定價中心、Greeks、hedging intuition；quote 是風險決策 — 它反映 inventory、hedge cost、flow toxicity、market speed、liquidity、surface uncertainty；P&L 是市場回饋 — 它告訴我們哪些決策是 edge、哪些只是 luck，哪些參數需要修。Trader 的工作，就是把這三件事連起來，並且持續迭代。模型不會自動把這三件事連起來；那條 feedback loop 是 trader 的工作。",
@@ -3558,6 +3566,113 @@
   .s8qa-r .q:last-of-type { border-bottom: none; padding-bottom: 0; }
   .s8qa-r .q .em { color: var(--accent); }
 
+
+  /* ============================================================ */
+  /* Chapter intro slides                                          */
+  /* ============================================================ */
+  .slide-chap {
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    height: 100%;
+    gap: 48px;
+  }
+  .chap-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .chap-progress { display: flex; gap: 10px; align-items: center; }
+  .chap-progress .step {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 20px;
+    padding: 7px 14px;
+    border: 1px solid var(--rule);
+    border-radius: 999px;
+    color: var(--fg-dim);
+    letter-spacing: 0.04em;
+    min-width: 18px; text-align: center;
+  }
+  .chap-progress .step.done { color: var(--fg-mute); }
+  .chap-progress .step.now {
+    color: var(--accent);
+    border-color: var(--accent);
+    background: rgba(217,119,87,0.08);
+  }
+  .chap-body {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 96px;
+    align-items: center;
+  }
+  .chap-num {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 288px;
+    font-weight: 300;
+    line-height: 0.85;
+    color: var(--accent);
+    letter-spacing: -0.04em;
+  }
+  .chap-text {
+    display: flex; flex-direction: column; gap: 22px;
+    max-width: 1300px;
+  }
+  .chap-eyebrow {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 22px;
+    letter-spacing: 0.2em;
+    color: var(--fg-dim);
+    margin: 0;
+  }
+  .chap-title {
+    font-size: 96px;
+    font-weight: 600;
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    color: var(--fg);
+    margin: 0;
+    text-wrap: balance;
+  }
+  .chap-title .em { color: var(--accent); }
+  .chap-title .arrow { color: var(--accent); font-weight: 300; margin: 0 6px; }
+  .chap-sub {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 30px;
+    color: var(--fg-mute);
+    margin: 0;
+    letter-spacing: 0.02em;
+    line-height: 1.3;
+  }
+  .chap-hook {
+    font-size: 34px;
+    font-weight: 400;
+    line-height: 1.45;
+    color: var(--fg);
+    margin: 14px 0 0;
+    max-width: 1200px;
+    padding-top: 22px;
+    border-top: 1px dashed var(--rule);
+    text-wrap: balance;
+  }
+  .chap-hook .em { color: var(--accent); }
+  .chap-foot {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    border-top: 1px solid var(--rule);
+    padding-top: 32px;
+  }
+  .chap-foot .meta {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 22px;
+    color: var(--fg-dim);
+    letter-spacing: 0.06em;
+  }
+  .chap-foot .arrow {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 32px;
+    color: var(--accent);
+  }
+
 </style>
 </head>
 <body>
@@ -3754,6 +3869,43 @@
       </div>
     </div>
   </section>
+
+  <!-- ============================================================ -->
+  <!-- Chapter 1 · PDE vs P&L                                       -->
+  <!-- ============================================================ -->
+  <section data-screen-label="Chapter 1 · PDE vs P&amp;L">
+    <div class="slide-chap">
+      <div class="chap-head">
+        <div class="eyebrow"><span class="dot"></span>Section 1 / 8</div>
+        <div class="chap-progress">
+          <span class="step done">0</span>
+          <span class="step now">1</span>
+          <span class="step">2</span>
+          <span class="step">3</span>
+          <span class="step">4</span>
+          <span class="step">5</span>
+          <span class="step">6</span>
+          <span class="step">7</span>
+          <span class="step">8</span>
+        </div>
+      </div>
+
+      <div class="chap-body">
+        <div class="chap-num">01</div>
+        <div class="chap-text">
+          <h1 class="chap-title">PDE <span class="em">vs</span> P&amp;L</h1>
+          <p class="chap-sub">From clean world to frictional world</p>
+          <p class="chap-hook">同樣的 fair value，<span class="em">在不同 market state 下</span> — 為什麼 quote 不一樣？</p>
+        </div>
+      </div>
+
+      <div class="chap-foot">
+        <span class="meta">PDE world → friction → executable quote</span>
+        <span class="arrow">→</span>
+      </div>
+    </div>
+  </section>
+
 
   <!-- ============== Slide 1-1｜Where the Quote Problem Comes From ============== -->
   <section data-screen-label="05 PDE vs Desk">
@@ -4019,6 +4171,43 @@
       </div>
     </div>
   </section>
+
+  <!-- ============================================================ -->
+  <!-- Chapter 2 · Fair Value → Quote                              -->
+  <!-- ============================================================ -->
+  <section data-screen-label="Chapter 2 · Fair Value → Quote">
+    <div class="slide-chap">
+      <div class="chap-head">
+        <div class="eyebrow"><span class="dot"></span>Section 2 / 8</div>
+        <div class="chap-progress">
+          <span class="step done">0</span>
+          <span class="step done">1</span>
+          <span class="step now">2</span>
+          <span class="step">3</span>
+          <span class="step">4</span>
+          <span class="step">5</span>
+          <span class="step">6</span>
+          <span class="step">7</span>
+          <span class="step">8</span>
+        </div>
+      </div>
+
+      <div class="chap-body">
+        <div class="chap-num">02</div>
+        <div class="chap-text">
+          <h1 class="chap-title">Fair Value <span class="arrow">→</span> Quote</h1>
+          <p class="chap-sub">Turning a model price into a market quote</p>
+          <p class="chap-hook">Fair value 是 <span class="em">中心</span> — quote 是 <span class="em">承擔風險的條件</span>。</p>
+        </div>
+      </div>
+
+      <div class="chap-foot">
+        <span class="meta">inventory · hedge cost · flow · liquidity · speed</span>
+        <span class="arrow">→</span>
+      </div>
+    </div>
+  </section>
+
 
   <!-- ============================================================ -->
   <!-- Slide 2-1 · Fair Value Is Not a Market Price                -->
@@ -4479,6 +4668,43 @@
       </div>
     </div>
   </section>
+
+  <!-- ============================================================ -->
+  <!-- Chapter 3 · Quote → Fill                                    -->
+  <!-- ============================================================ -->
+  <section data-screen-label="Chapter 3 · Quote → Fill">
+    <div class="slide-chap">
+      <div class="chap-head">
+        <div class="eyebrow"><span class="dot"></span>Section 3 / 8</div>
+        <div class="chap-progress">
+          <span class="step done">0</span>
+          <span class="step done">1</span>
+          <span class="step done">2</span>
+          <span class="step now">3</span>
+          <span class="step">4</span>
+          <span class="step">5</span>
+          <span class="step">6</span>
+          <span class="step">7</span>
+          <span class="step">8</span>
+        </div>
+      </div>
+
+      <div class="chap-body">
+        <div class="chap-num">03</div>
+        <div class="chap-text">
+          <h1 class="chap-title">Quote <span class="arrow">→</span> Fill</h1>
+          <p class="chap-sub">Each fill is a test of your quote</p>
+          <p class="chap-hook">成交不是故事結束 — <span class="em">它是 flow diagnosis 的入口</span>。</p>
+        </div>
+      </div>
+
+      <div class="chap-foot">
+        <span class="meta">selection · post-fill markout · feedback loop</span>
+        <span class="arrow">→</span>
+      </div>
+    </div>
+  </section>
+
 
   <!-- ============================================================ -->
   <!-- Slide 3-1 · Quote Is Decision, Fill Is Feedback              -->
@@ -4950,6 +5176,43 @@
       </div>
     </div>
   </section>
+
+  <!-- ============================================================ -->
+  <!-- Chapter 4 · Fill → Book Risk                                 -->
+  <!-- ============================================================ -->
+  <section data-screen-label="Chapter 4 · Fill → Book Risk">
+    <div class="slide-chap">
+      <div class="chap-head">
+        <div class="eyebrow"><span class="dot"></span>Section 4 / 8</div>
+        <div class="chap-progress">
+          <span class="step done">0</span>
+          <span class="step done">1</span>
+          <span class="step done">2</span>
+          <span class="step done">3</span>
+          <span class="step now">4</span>
+          <span class="step">5</span>
+          <span class="step">6</span>
+          <span class="step">7</span>
+          <span class="step">8</span>
+        </div>
+      </div>
+
+      <div class="chap-body">
+        <div class="chap-num">04</div>
+        <div class="chap-text">
+          <h1 class="chap-title">Fill <span class="arrow">→</span> Book Risk</h1>
+          <p class="chap-sub">From single trade to portfolio shape</p>
+          <p class="chap-hook">單筆 edge 不代表整本安全 — <span class="em">risk lives in the book shape</span>。</p>
+        </div>
+      </div>
+
+      <div class="chap-foot">
+        <span class="meta">Greeks · scenarios · concentration · neutral-is-local</span>
+        <span class="arrow">→</span>
+      </div>
+    </div>
+  </section>
+
 
   <!-- ============================================================ -->
   <!-- Slide 4-1 · From Fill to Book Risk                            -->
@@ -5470,6 +5733,43 @@
     </div>
   </section>
 
+
+
+  <!-- ============================================================ -->
+  <!-- Chapter 5 · Book Risk → Hedge                                -->
+  <!-- ============================================================ -->
+  <section data-screen-label="Chapter 5 · Book Risk → Hedge">
+    <div class="slide-chap">
+      <div class="chap-head">
+        <div class="eyebrow"><span class="dot"></span>Section 5 / 8</div>
+        <div class="chap-progress">
+          <span class="step done">0</span>
+          <span class="step done">1</span>
+          <span class="step done">2</span>
+          <span class="step done">3</span>
+          <span class="step done">4</span>
+          <span class="step now">5</span>
+          <span class="step">6</span>
+          <span class="step">7</span>
+          <span class="step">8</span>
+        </div>
+      </div>
+
+      <div class="chap-body">
+        <div class="chap-num">05</div>
+        <div class="chap-text">
+          <h1 class="chap-title">Book Risk <span class="arrow">→</span> Hedge</h1>
+          <p class="chap-sub">Hedging is a conditional decision</p>
+          <p class="chap-hook">看到 delta 偏掉，不代表立刻 hedge 到 0 — <span class="em">hedge 是用成本換風險形狀</span>。</p>
+        </div>
+      </div>
+
+      <div class="chap-foot">
+        <span class="meta">cost · execution · target range · trader override</span>
+        <span class="arrow">→</span>
+      </div>
+    </div>
+  </section>
 
 
   <!-- ============================================================ -->
@@ -6031,6 +6331,43 @@
           <span class="arrow">→</span>
           <span class="name">Section 6 · Hedged Book Still Loses｜中性為何仍會失效</span>
         </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ============================================================ -->
+  <!-- Chapter 6 · Hedged Book Still Loses                          -->
+  <!-- ============================================================ -->
+  <section data-screen-label="Chapter 6 · Hedged Book Still Loses">
+    <div class="slide-chap">
+      <div class="chap-head">
+        <div class="eyebrow"><span class="dot"></span>Section 6 / 8</div>
+        <div class="chap-progress">
+          <span class="step done">0</span>
+          <span class="step done">1</span>
+          <span class="step done">2</span>
+          <span class="step done">3</span>
+          <span class="step done">4</span>
+          <span class="step done">5</span>
+          <span class="step now">6</span>
+          <span class="step">7</span>
+          <span class="step">8</span>
+        </div>
+      </div>
+
+      <div class="chap-body">
+        <div class="chap-num">06</div>
+        <div class="chap-text">
+          <h1 class="chap-title">Hedged Book <span class="em">Still Loses</span></h1>
+          <p class="chap-sub">Why "neutral" is only a local statement</p>
+          <p class="chap-hook">Δ / 𝒱 ≈ 0 — <span class="em">為什麼 P&amp;L 還會動</span>？</p>
+        </div>
+      </div>
+
+      <div class="chap-foot">
+        <span class="meta">gamma bleed · surface · gap · pin · residual</span>
+        <span class="arrow">→</span>
       </div>
     </div>
   </section>
@@ -6738,6 +7075,43 @@
 
 
   <!-- ============================================================ -->
+  <!-- Chapter 7 · P&L Attribution                                  -->
+  <!-- ============================================================ -->
+  <section data-screen-label="Chapter 7 · P&amp;L Attribution">
+    <div class="slide-chap">
+      <div class="chap-head">
+        <div class="eyebrow"><span class="dot"></span>Section 7 / 8</div>
+        <div class="chap-progress">
+          <span class="step done">0</span>
+          <span class="step done">1</span>
+          <span class="step done">2</span>
+          <span class="step done">3</span>
+          <span class="step done">4</span>
+          <span class="step done">5</span>
+          <span class="step done">6</span>
+          <span class="step now">7</span>
+          <span class="step">8</span>
+        </div>
+      </div>
+
+      <div class="chap-body">
+        <div class="chap-num">07</div>
+        <div class="chap-text">
+          <h1 class="chap-title">P&amp;L Attribution</h1>
+          <p class="chap-sub">Decomposing result into decisions</p>
+          <p class="chap-hook">Total P&amp;L 是結果 — <span class="em">component P&amp;L 才是診斷</span>。</p>
+        </div>
+      </div>
+
+      <div class="chap-foot">
+        <span class="meta">spread · delta · gamma · vega · skew · hedge · residual</span>
+        <span class="arrow">→</span>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ============================================================ -->
   <!-- Slide 7-1 · Today P&L = +100. Good Day?                      -->
   <!-- ============================================================ -->
   <section data-screen-label="52 · Today P&L Decomposed">
@@ -6914,6 +7288,43 @@
           <span class="arrow">→</span>
           <span class="name">Section 8 · Risk · Trader · Closing</span>
         </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ============================================================ -->
+  <!-- Chapter 8 · Closing                                          -->
+  <!-- ============================================================ -->
+  <section data-screen-label="Chapter 8 · Closing">
+    <div class="slide-chap">
+      <div class="chap-head">
+        <div class="eyebrow"><span class="dot"></span>Section 8 / 8</div>
+        <div class="chap-progress">
+          <span class="step done">0</span>
+          <span class="step done">1</span>
+          <span class="step done">2</span>
+          <span class="step done">3</span>
+          <span class="step done">4</span>
+          <span class="step done">5</span>
+          <span class="step done">6</span>
+          <span class="step done">7</span>
+          <span class="step now">8</span>
+        </div>
+      </div>
+
+      <div class="chap-body">
+        <div class="chap-num">08</div>
+        <div class="chap-text">
+          <h1 class="chap-title">Closing</h1>
+          <p class="chap-sub">Risk · Trader · the question we started with</p>
+          <p class="chap-hook">模型替<span class="em">選擇權定價</span>，交易員替<span class="em">風險定價</span>。</p>
+        </div>
+      </div>
+
+      <div class="chap-foot">
+        <span class="meta">what hurts · trader's job · closing question · takeaways · Q&amp;A</span>
+        <span class="arrow">→</span>
       </div>
     </div>
   </section>
