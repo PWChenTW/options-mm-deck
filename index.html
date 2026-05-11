@@ -22,57 +22,38 @@
   "假設模型告訴你，這個 ATM call 的 theoretical value 是 100。在第一個情境裡，你的 book 很乾淨，futures spread 很窄，市場沒有特別快，最近成交也都很正常。這時候你可能願意報得比較正常，例如接近 fair value，size 也可以比較大。但第二個情境完全不同。你已經 long 很多 call，futures 正在快速上漲，hedge cost 變高，而且同一段 strike 剛剛連續有人掃你的 ask。注意，這兩個情境裡，模型 theoretical value 都是 100。問題是：你真的會報一樣的 bid ask 嗎？大部分交易員的答案會是不會。不是因為 100 這個 fair value 沒用，而是因為 quote 不是單純把 fair value 加減一個固定 tick。quote 反映的是你在這個市場狀態下，願意承擔風險的條件。",
   "這就是今天第一個核心概念：fair value 是模型輸出，quote 是交易決策輸出。Fair value 很重要，因為它提供中心。沒有 fair value，你不知道價格大概在哪裡，也無法討論 edge、Greeks、hedge。但真正掛到市場上的 quote，還要反映很多東西。你現在的 inventory 是不是已經偏了？成交後 hedge 是否容易？最近 flow 是正常需求，還是每次成交後價格都往不利方向走？市場速度是不是快到你的 quote 很容易 stale？流動性是不是足夠讓你在出事時退出？所以 quote 不是 fair value 後面機械地加一個 spread。quote 是交易員把模型輸出放回真實市場後，對風險承擔條件做出的選擇。這也是為什麼 market maker 的問題不是單純「這個 option 值多少」，而是「在現在這個 market state，我願意用什麼價格、多少 size、承擔什麼方向的風險」。到這裡，我們已經看到 fair value 進入交易室後，第一件事是變成 quote。下一步要問的是：為什麼模型世界和交易世界會有這麼大的差距？這要從 PDE 世界和 P&L 世界的假設差異開始。",
   "進入第一章。前面我們用一個簡單例子看到，同一個 ATM call 理論價都是 100，但在乾淨市場和壓力市場裡，合理 quote 不一樣。這個落差不是 quote 技巧的問題，是兩個世界的問題。PDE 世界要回答的是 fair value — 它在一組乾淨假設下，給我們定價中心、Greeks 和 hedging intuition。P&L 世界要回答的是 risk-taking — 它在有摩擦、有對手選擇、有流動性限制的市場裡，決定要不要報價、報多寬、多大 size、要不要 hedge。這一章我會帶各位看清楚這兩個世界的假設差在哪裡，為什麼模型給的乾淨答案進入交易室會走樣，並且讓 gap risk、replication tracking error 這些聽起來很抽象的詞，變成 P&L 上具體看得見的東西。",
-  "上一章我們用一個簡單例子看到：同一個 ATM call，模型 theoretical value 都是 100，但在乾淨市場和壓力市場裡，合理 quote 可能不一樣。這背後其實不是一個 quote 技巧，而是兩個世界的落差。PDE 世界問的是：在一組乾淨假設下，這個 option 的 fair value 是多少？這個問題非常重要，因為它給我們定價中心、Greeks 和 hedging intuition。但交易室問的是另一個問題：在現在這個市場狀態下，我願意用什麼價格、多少 size，承擔這筆風險？成交以後，我能不能 hedge？hedge 的成本是多少？如果市場突然跳掉，我的 book 會變成什麼樣子？所以第一章要做的不是否定 PDE，而是看清楚：PDE 解的是乾淨世界的定價問題；P&L 發生在摩擦世界的風險承擔問題。",
   "Black-Scholes 的假設不是幼稚，而是必要的抽象。沒有這些抽象，我們很難建立一個乾淨的定價基準，也很難推導 Greeks 和 hedging intuition。但是 market maker 真正的 P&L，通常就發生在這些假設被打破的地方。理論上你可以 continuous hedge，實務上你只能 discrete hedge，而且每一次 hedge 都要付 spread、fee、slippage。理論上 volatility 是一個參數，實務上你面對的是整張 vol surface，而且它會隨 underlying、flow、event、expiry 一起變形。理論上流動性不受限制，實務上你最想 hedge 的時候，futures spread 可能變寬，depth 可能變薄。理論上沒有 latency，實務上你的 quote 可能在 underlying 已經動了之後，還停留在上一個 market state。所以這頁的重點不是「模型假設不真實」這句廢話。真正的重點是：模型為了得到 fair value 而拿掉的東西，正是 trader 需要定價與管理的東西。可以順便丟一個問題給學生：這些摩擦如果只能挑一個最容易殺死 market maker，你會挑哪一個？我的答案會是它們通常一起發生：行情快的時候 latency 變重要，latency 變重要時 quote 容易 stale，stale 時成交更可能 toxic，toxic 時你最需要 hedge，但這時 liquidity 正在消失。",
   "先看最直觀的例子：gap risk。在 PDE 的直覺裡，價格是連續變動的，所以你可以一路調整 delta hedge。underlying 漲一點，你調一點；跌一點，你再調一點。這是 dynamic replication 的核心直覺。但真實市場可能不是這樣。週五收盤時，你的 delta 可能接近 0。週末發生事件，週一開盤 underlying 直接 gap down 3%，同時 implied vol 往上跳，流動性也變差。這時候問題不是你 hedge 慢，而是中間根本沒有價格，也沒有市場。你不能在不存在的成交點上調整 hedge。所以 delta neutral 並不是一個絕對保護。它只代表在當下 market state 和當下模型切面裡，你的一階方向曝險接近 0。當市場用跳躍的方式移動，且 vol surface 同時重估時，風險會從你沒有 hedge 機會的地方冒出來。這也順手埋下後面 Section 6 的伏筆：delta neutral 是 local 的，市場如果不是沿著小步連續路徑移動，中性狀態會很快失效。",
-  "Gap risk 是最容易理解的極端情況。但即使市場沒有跳空，實務上的 hedge 也不是理論裡那種無成本、連續、精準的 replication。假設 10:00 你的 delta 是 +20 lots。三分鐘後 futures 動了，delta 變成 +45 lots。你決定 hedge 40 lots，但這個 hedge 不是免費的，你要付 futures spread、fee，還可能有 slippage。接著 market 又反向，delta 變成 -25 lots，你又要 hedge 回來，再付一次成本。在課本裡，dynamic hedging 是複製 payoff 的工具；在交易室裡，它也是一個不斷用成本追蹤風險目標的過程。每次調整都可能讓你的 book 更安全，但也會在 P&L 裡留下痕跡。所以 hedge 不是純粹的保護，它是一個 trade-off：你用交易成本、執行風險和可能的 tracking error，去換取更低的方向曝險。如果你收 1 tick edge，但成交後 hedge 就付掉 1.5 tick 的成本，理論上成交價高於 fair value 也不代表這筆交易真的有 edge。",
-  "到這裡，我們可以把第一章收束成一句話：PDE 給我們 fair value，但 P&L 會告訴我們，這個 fair value 進入市場後需要加上哪些保護。交易成本會影響你願意報多寬；latency 會影響你的 quote 會不會 stale；流動性會影響成交後能不能 hedge；gap risk 會影響你能承受多少 overnight 或 event exposure；surface move 會影響你以為中性的 book 是否真的中性。這些都不是 fair value 本身能單獨回答的問題。所以我們下一章要回到第零章的那個 ATM call：模型說 theoretical value 是 100。現在我們已經知道，100 只是中心。真正的問題是：我要怎麼把它轉成 bid、ask、size，甚至決定要不要報價？",
   "進入第二章。我們現在知道 PDE 世界給的是 fair value，P&L 世界發生在 friction 裡。回到開場那個 ATM call：模型說值 100，我到底該報什麼？這一章要拆的，是 fair value 怎麼變成 quote — 而 quote 不是把 fair value 加減一個 tick，而是把 inventory、hedge cost、flow toxicity、market speed、liquidity 一起合成的決策。我會用幾個案例讓各位看到：同一個 fair value，在不同 market state 下，合理 quote 可能完全不同。這也是 market maker 真正的工作所在 — 不是算出價格，而是在當下市場狀態下，決定要不要承擔這筆風險。",
-  "上一章我們看到，PDE 給的是乾淨世界裡的 fair value，但交易室裡的 P&L 發生在有成本、有延遲、有流動性限制的世界。所以現在回到這個問題：如果模型說一個 ATM call 的 theoretical value 是 100，我是不是就應該報 99 / 101？不一定。99 / 101 看起來很自然，因為它以 fair value 為中心，左右各加一個 tick。但這只是在某些市場狀態下可能合理。真正的 quote 還要問：我的 book 現在偏哪邊？成交後能不能 hedge？市場是不是正在變快？最近的 flow 是正常需求，還是每次成交後都往不利方向走？如果出事，我能不能退出？所以 fair value 很重要，但它不是市場上的價格。它只是 quote decision 的中心。沒有 fair value，你不知道中心在哪裡；但只有 fair value，你不知道該不該成交。",
   "假設 theoretical value 是 100。這裡有四種可能的 quote decision。在正常市場裡，你可能報 99 / 101，size 50。這代表市場平穩、hedge 成本可控、book 也沒有明顯壓力。如果你的 inventory 已經偏了，例如你不想再買更多同方向風險，你可能把某一邊 quote 拉遠，size 也縮小。不是因為 fair value 變了，而是你的風險承擔能力變了。如果市場很快、flow 很毒、quote 很容易 stale，你可能需要更寬的 spread、更小的 size。你要先確保成交後不會立刻被 adverse selection 打穿。最後，有些時候最好的 quote 不是報更寬，而是直接撤。market maker 不是永遠都要報價。當 market state 超出你能定價與 hedge 的範圍時，不成交本身也是一個交易決策。所以哪個是正確報價？答案不是某一個固定數字。答案取決於 market state。",
   "很多人在剛開始想 market making 時，會把 quote 想成一個 bid ask spread。但實務上，quote 不是一個價格，而是一組交易條件。你不只是決定 bid 和 ask，還要決定每一邊掛多少 size。你要不要兩邊 size 一樣？如果你已經有很多 long call，你還想在 bid 上掛大 size 嗎？如果 ask 被打，你是否願意繼續補 ask，還是要降低 size？你也要決定 quote refresh 的速度，以及什麼情況要撤單。市場突然變快，underlying 跳動超過某個範圍，hedge instrument spread 變寬，或某一段 strike 被連續掃單，這些都可能讓你不想繼續用原本的 quote 承擔風險。所以好的 quote 不是被動等人來打。它其實是在選擇 flow：我願意跟什麼樣的對手、在什麼樣的市場狀態下、用多少 size 成交。",
   "第一個 quote adjustment 來源是 inventory。假設模型說這個 call 值 100。如果你的 book 很乾淨，你可能願意正常報雙邊。但如果你已經 long 很多同一個 expiry、同一段 strike 的 calls，你要問的就不是「這個 call 值多少」而已。你要問的是：如果我再買一筆，整本 book 會變成什麼形狀？我的 gamma、vega、skew exposure 會不會集中？如果 underlying 繼續往同一個方向走，我的 delta 會不會快速長出來？如果 vol surface 重新定價，我是不是會在同一區域被打穿？所以你可能把 bid 拉遠或縮小 bid size，讓自己比較不容易再買到同方向風險。相反地，你可能比較願意在 ask 上賣出一些，幫 book 回到比較舒服的位置。注意，這不是說 fair value 從 100 變成 96。Fair value 還是 100。改變的是你願意繼續增加這種風險的條件。Market maker 提供流動性時，其實在出租自己的 risk capacity。當某種風險已經太滿，下一筆同方向交易就需要更好的價格補償。",
-  "第二個 quote adjustment 是 hedge cost 和 market speed。假設 theoretical value 是 100，你在 101 賣出。從模型角度看，這筆交易有 +1 tick 的 paper edge。很多學生第一反應會是：這不是賺了嗎？但成交不是故事結束，而是風險開始。你賣出 option 以後，通常需要用 futures 或其他工具處理 delta。這個 hedge 有 spread、fee、slippage。如果市場正在快速移動，你送出 hedge order 時看到的價格，可能已經不是成交當下的價格。更糟的是，如果你的 quote 本身已經 stale，你以為自己賣在 101 很貴，但其實新的 fair value 已經不是 100。所以 paper edge 不等於 executable edge。真正重要的是：成交價格相對於 fair value 的 edge，是否足夠支付 hedge cost、slippage、latency risk，以及成交後 market move 的不確定性。這也是為什麼 fast market 裡 quote 會變寬、size 會變小，甚至會撤單。不是因為 trader 突然不會算 fair value，而是 fair value 到 P&L 中間的成本變大了。",
   "第三個 adjustment 是 flow 和 toxicity。Market maker 掛 quote 的時候，不是隨機抽人來交易。對方會選擇在你的 bid 或 ask 成交。這個被選中本身就有資訊。如果有人買你的 ask，可能只是正常 liquidity demand。他需要立即成交，所以願意付 spread。這是 market maker 希望看到的 flow。但如果你連續被打 ask，而且成交後 futures 繼續往上，附近 strikes 也開始被掃，那你就要小心：這可能不是單純 spread capture，而是你的 quote 落後了。可能 underlying 已經動了，可能 surface 正在被重新定價，也可能對方比你更快知道 fair value 變了。這就是 flow toxicity。當你懷疑成交帶有資訊優勢時，你需要更高 edge、更小 size、更快 repricing，甚至直接撤單。這裡的核心不是恐懼成交，而是診斷成交。好的 market making 不是避免所有 trade，而是願意接 normal liquidity demand，同時降低被 toxic flow 選中的機率。",
   "我們可以把 quote adjustment 收成這張 map。Inventory 問的是：我還能不能繼續接同方向風險？如果不能，quote 就要 skew，size 也要改。Hedge cost 問的是：成交後能不能便宜地把 delta 或其他風險處理掉？如果 hedge 成本變高，spread 就需要變寬，size 也要變小。Market speed 問的是：我的 quote 會不會在市場已經動了以後還停在原地？如果會，quote 要更新更快，或者直接降低參與。Flow toxicity 問的是：對方為什麼願意跟我成交？如果每次成交後都往不利方向走，代表我可能被資訊更快的人選中了。Liquidity 問的是：出事時我能不能退出？如果 hedge instrument 或 option book 自己都變薄，size 就不能像平常一樣大。Vol uncertainty 問的是：這張 surface 我有多相信？如果 vol 正在重估，或 event risk 很高，quote 就需要更多 buffer。這張表的重點不是讓學生背六個因素，而是讓他們看到：quote 是交易員把模型輸出、book 狀態、市場摩擦和對手選擇合成後的決策。Spread 不是單純利潤來源，而是 market maker 要求市場支付的風險保費。這六個因素之間會互相放大：fast market 提高 quote stale risk，stale 提高 toxic fill 機率，toxic fill 累積 inventory，inventory 累積又提高 hedge urgency，而 hedge urgency 上升時 liquidity 可能剛好變差。",
-  "第二章我們一直站在 quote 送出去之前的角度：fair value 是多少？inventory 怎麼樣？hedge cost 高不高？flow toxic 不 toxic？size 要放多少？但 market making 最有趣的地方是，quote 一旦放進市場，它就會被測試。如果沒成交，可能代表你的價格太保守，也可能只是市場沒有需求。如果成交了，也不一定是好消息。你要問：為什麼是我成交？成交後 underlying、vol、其他 strikes 怎麼走？這筆 fill 是正常 spread capture，還是我的 quote 落後了？所以下一章的主題會從 quote decision 轉到 fill diagnosis。每一筆成交，都是市場對你報價的一次測試。",
   "進入第三章。上一章我們把 quote 拆成 inventory、hedge cost、flow、market speed、liquidity 的合成決策。但 quote 一旦掛進市場，它就會被測試 — 沒成交可能是價格太保守，也可能市場沒需求；成交也不一定是好消息，因為成交本身帶著資訊。這一章要看的是：fill 怎麼變成 flow diagnosis，怎麼從『有人在我的 ask 成交了 → 我收到 spread』升級成『為什麼是我成交？對方知道什麼？我的下一個 quote 該怎麼動？』。Adverse selection 是 market making 最常被低估的成本，這一章會把它講清楚。",
   "上一章我們站在 quote 送出去之前的角度：fair value 是 100，我要報多少 bid、多少 ask、多少 size？我要不要因為 inventory、hedge cost、market speed 或 flow toxicity 做調整？但 quote 一旦放進市場，就不再只是你的決策。市場會決定要不要跟你成交，也會決定用什麼方式跟你成交。如果你沒有成交，可能是價格太保守，也可能只是市場暫時沒有需求。如果你成交了，也不一定是好事。成交代表有人願意在你的價格跟你交易。那你要問：為什麼是我？對方是單純需要 liquidity，還是他比我更快知道 fair value 已經變了？所以 fill 不是故事結束。fill 是市場對你 quote 的第一次回饋。Quote is an invitation. Fill is selection. Selection contains information.",
   "假設模型說 ATM call theoretical value 是 100，你報 99 / 101。接著 ask 連續被打，三筆成交都在 101。表面上看，你賣在 theoretical value 上方 1 tick，好像每一筆都有 edge。這可能真的是好事：對方需要 immediacy，他願意付 spread，你提供 liquidity，收取 liquidity premium。但同一個現象也可能有完全不同的解讀。如果 ask 被連續打，而且對方沒有停下來，你要懷疑：是不是我的 ask 太便宜？是不是 underlying 已經動了，但我的 quote 還沒更新？是不是 vol surface 正在被重估，對方正在掃我還沒調整的 strikes？所以成交本身不是答案。成交之後市場怎麼走，才會開始告訴你這筆 fill 的品質。成交價高於 theoretical value，只是 paper edge；如果成交後 market immediately moves against you，這個 edge 可能只是 stale quote 的錯覺。",
-  "同樣是賣出 ATM call 在 101，成交當下 theoretical value 是 100，paper edge 是 +1 tick。但這筆交易的真正含義，要看成交後市場怎麼走。第一種路徑，futures 沒什麼動，IV 沒什麼動，附近 strikes 也沒有異常成交。這比較像正常 liquidity demand。對方需要立刻買，你提供 liquidity，收 spread。第二種路徑，成交後 futures 立刻上跳。你剛賣出的 call 馬上變貴。這時候你要懷疑：是不是你的 quote lag 了？是不是對方比你更快反應 underlying move？這就是 adverse selection 的典型警訊。第三種路徑，underlying 可能沒有大跳，但附近 calls 也開始被掃，或者同 expiry 某一段 strike 被集中買。這可能代表不是單一 option 的問題，而是那一段 surface、skew、wing 或 event risk 被市場重新定價。所以 fill diagnosis 不是只看成交價。它是 fill pattern 加上 post-fill market reaction。單筆 fill 不足以下結論，但連續 pattern 會變成非常重要的訊號。",
   "這張表把 fill diagnosis 收成幾種常見 pattern。如果是隨機小單，成交後市場沒有明顯不利移動，這可能就是正常 liquidity demand。你要確認的是 spread capture 是否足夠支付 hedge 和 execution cost。如果是急迫掃單，對方可能只是需要 immediacy。這不一定 toxic，但你要注意 size，不要因為收一點 liquidity premium，就讓自己的 inventory 快速偏掉。如果是單邊連續打，問題會從單筆 edge 變成 inventory accumulation。你可能每筆都看起來有 edge，但整本 book 正在被推向同一個風險方向。如果成交後價格繼續不利，這是 adverse selection 的警訊。你要檢查 quote 是否 stale、latency 是否太高、underlying update 是否慢、vol surface 是否該調。如果特定 strike 或某一段 expiry 被集中打，這可能不是單一 quote 問題，而是 surface 局部錯估。最後，如果 market move 後你的 quote 才成交，很可能是 cancel / replace 速度不夠。Flow diagnosis is not a label. It is a decision about whether your next quote should change.",
   "Adverse selection 是 market making 裡最核心、也最容易被初學者低估的問題。你掛 ask 101。對方買走。你看到成交價比 theoretical value 100 高 1 tick，以為自己收了 spread。但如果真正的 fair value 很快更新到 103，你其實不是賣貴，而是賣便宜了。你賣的是舊市場狀態下的價格。這就是 market maker 被資訊更快、反應更快、或風險判斷更好的人選中。你以為你提供 liquidity，但對方可能是在用你的 stale quote 轉移風險。這種損失很傷，因為它會讓 spread capture 看起來存在，但 markout 或 hedge P&L 持續流血。最後你發現：成交很多，spread 看起來也不錯，但每次成交後都往不利方向走，總 P&L 還是不好。問題不是被 informed flow 成交；問題是你沒有收足夠的 edge，卻承擔了 informed flow 的風險。",
-  "如果 fill 真的有資訊，那它不應該只是成交明細上的一列資料。它應該回饋到下一個 quote。看到成交後，你會看 post-fill market reaction。市場有沒有往不利方向走？同區域有沒有被掃？成交是不是集中在某一邊？hedge 成本是不是變高？接著做 flow diagnosis。然後下一個 quote 要改：可能是 price move，可能是 spread widen，可能是 bid / ask skew，可能是 size reduce，也可能是某些 strikes 暫時不報。若你懷疑 surface 錯，甚至要回到 vol / skew / wing 的調整。所以 market making 不是每次重新從 fair value 開始，而是一個 feedback loop。上一筆 fill 會影響下一筆 quote，下一筆 quote 又會被下一筆 fill 測試。在 highly competitive market 裡，大家的 pricing model 差異沒有想像中大；差異反而在誰更快辨識 stale quote、誰更會控制 toxic flow、誰更能讓 fill feedback 變成 quote adjustment。",
-  "第三章我們把 fill 當成資訊事件：它告訴你 quote 是否合理、flow 是否正常、下一個 quote 是否需要調整。但 fill 還有另一個作用：它會改變你的 book。如果你賣出 20 口 ATM calls，這不是交易紀錄上的一筆成交而已。它會改變你的 delta、gamma、vega，也可能讓風險集中在某一個 expiry 或 strike region。它還會創造新的 hedge demand。這就是為什麼 market making 不能只看單筆 trade。單筆看起來有 edge，不代表整本 book 安全。連續幾筆同方向成交，可能會把你推進一個很不舒服的風險形狀。所以下一章要從 fill 進入 book risk：一筆交易如何被整本 book 吸收，然後變成 Greeks、limits、hedge decision 和風險管理問題。",
   "進入第四章。Fill 不只是市場對 quote 的回饋，它還會留下 position。Position 進入 book，就會改變整本 portfolio 的風險形狀。這一章要從單筆 trade 切到 book — 每筆都有 edge 不代表整本安全，連續同方向 fills 會把 book 推到特定 risk shape；總 Greeks 中性也不代表局部 bucket 沒爆。我會把 Greeks 當作 risk coordinates 而不是公式表，並且讓各位看到 neutral 為什麼只是 local statement — 這也是後面 hedge 與 residual risk 兩章的伏筆。",
   "上一章我們已經知道，fill 是市場對 quote 的回饋。但 fill 還有另一個層面，它會留下 position。Position 進入 book，就會改變整本 portfolio 的風險形狀。所以這章要處理的不是某一筆交易的 edge，而是這筆交易疊在原本 book 上之後，整體會變成什麼形狀。Market maker 真正要管理的不是 trade 本身，而是 trade 之後留下的 risk shape。我們先看一個最容易誤判的情境：每一筆成交看起來都有 edge，方向卻都一樣。",
   "假設你連續賣出 20 口 ATM call，每一筆成交價都比 theoretical value 高 1 tick。從單筆 trade 的角度看，這非常漂亮：每筆都比模型價貴。但 market maker 不能停在單筆視角。真正要問的是：這 20 筆交易疊起來，整本 book 變成什麼形狀。連續賣 call，short gamma 會增加，short vega 會增加，upside delta 會快速長出來；如果這些 call 又集中在同一 expiry、同一段 strike，風險不是平均分散，而是局部集中。這不是說連續賣 call 一定不好，而是說：單筆 edge 必須放回 book 裡看。Market making 的 P&L 不是單筆獨立相加，因為每一筆都會改變下一筆的風險條件。",
-  "所以成交之後，第一件事不是計算單筆 P&L，而是把 trade blotter 翻譯成 risk map。Trade blotter 描述的是歷史：賣了哪個 strike、哪個 expiry、size 多少、成交價多少。這很重要，但它回答的是「我做了什麼」。Risk map 則回答下一個問題：現在 delta 是多少？gamma 集中在哪裡？vega 在哪個 expiry 最大？skew 或 wing exposure 是否集中？underlying 上下移動 1%、2%、3% 時，book 會怎樣？實務上 risk map 不只是加總 Greeks，還會看 scenario P&L、bucket exposure、limit usage、hedge liquidity。Market maker 的下一個決策，是根據整本 book 在下一個市場狀態下的 vulnerability，不是根據剛剛某一筆成交。",
   "即使你已經看 Greeks，還有一個常見陷阱：總數字看起來不大，局部風險可能已經很集中。假設總 delta 接近 0，總 vega 也接近 0，表面上 book 很乾淨。但拆到 expiry 和 strike bucket 可能完全不同：near expiry short gamma 集中，downside puts long vega，upside calls short wing，某段 strike 剛剛又被連續 toxic fills 打到。總數字只是互相抵消，但市場不一定用讓它們抵消的方式移動。Downside vol 上升不代表 upside vol 也上升；near expiry gamma 爆掉不會被遠月 vega 抵掉。Aggregation can hide concentration。Market maker 真正怕的不是某個總 Greek 大，而是風險集中在你沒意識到、或沒 liquidity 處理的地方。",
   "這就是為什麼 Greeks 需要被重新理解。各位在課堂上都學過 Greeks 的數學定義：delta 是 price 對 underlying 的一階敏感度，gamma 是 delta 的變化，vega 是 price 對 IV 的敏感度。但在交易室裡，Greeks 不是拿來背定義的，它們是一組 risk coordinates。Trader 看 delta，是問：現在有多少方向曝險？看 gamma，是問：市場動了，delta 會長多快？看 theta，不只是問每天收多少時間價值，而是問：theta 是否補償了 gamma、jump、hedge cost？看 vega，是問 vol level 重估時 book 會怎樣。看 vanna、volga、skew，是問 underlying 和 surface 一起動時，風險怎麼變形。Greeks 的價值不是答案，是讓 trader 提出更好的風險問題。",
-  "但只有 Greeks snapshot 還不夠。Greeks 是某個時間點的切面，trader 真正想知道的是：市場下一步沿不同路徑走，book 會怎麼變。假設現在總 delta 接近 0，總 vega 也接近 0，但 book 裡有 near expiry short gamma，剛剛又連續賣了一些 upside calls。Scenario A：市場上漲 2%，upside calls 的 delta 變大，需要買 futures hedge，ask 可能繼續被打。Scenario B：市場下跌 2%，IV 上升，skew 變陡，這時 vanna、skew、wing exposure 變得重要。即使起始 vega 接近 0，surface deformation 也會讓你有感。所以 trader 不會只問「現在 delta 是多少」，而是問：在合理的市場路徑下，delta 會怎麼長出來，vega 會在哪裡出現，哪個 bucket 會先撞到 limit。Risk is not a number — risk is a shape under scenarios。",
   "這就帶到第四章最重要的一句話：neutral is local。Delta neutral、vega neutral、甚至某些情況下的 gamma neutral，都不是「沒有風險」的同義詞。它們描述的是：在現在的 underlying、現在這張 vol surface、現在這個模型、現在這個時間點下，某些一階或局部敏感度接近 0。但市場不會停在這個截面上，而且通常不只沿一個軸移動。股市下跌時 IV 可能上升、skew 可能變陡、liquidity 可能變差、flow 可能更單邊。當這些一起發生，原本看起來中性的 book 會重新長出 delta、vega、skew risk。Neutral 不是沒用，它讓你知道當下的一階曝險；但它是風險管理的起點，不是終點。Market maker 不只看 current Greeks，也看 scenario、limit usage、bucket concentration、hedge liquidity。",
-  "到這裡，我們完成了一個重要轉換：成交不是單筆 P&L 的結束，而是整本 book risk 的開始。Greeks 是風險座標，scenario 才能讓你看到風險在市場路徑下怎麼變形，而 neutral 只是局部截面。但看見風險之後，下一步不是機械地把所有風險立刻消掉。Hedge 本身有成本、有流動性限制、有執行風險，也可能改變 book 的風險形狀。假設成交後 trading delta = +100 lots。如果 futures spread 很窄、depth 足夠、市場平穩，你可能願意快速 hedge。但如果 futures spread 變寬、市場跳動快、depth 變薄，你真的要立刻 hedge 到 0 嗎？這就是下一章的主題：hedge 不是公式反射，而是條件決策。",
   "進入第五章。看到 book risk 之後，直覺是 hedge 掉。但 hedge 不是公式反射 — 它本身有成本、有流動性限制、有執行風險，也會改變 book 的風險形狀。這一章要把 hedge 從『機械動作』講成『條件決策』。同樣 +100 delta，在不同 market state 下，合理 hedge 完全不一樣。Hedge 多少、什麼時候、用什麼工具、要不要先 reduce quote 再 hedge — 這些都是這一章要回答的問題。最重要的一個概念：hedge 不是把風險消滅，而是把風險換成另一種形狀。",
   "上一章我們花了不少時間，把單筆 fill 推進整本 book，看到 Greeks 是風險座標，scenario 才看得到變形，而 neutral 只是局部截面。很多人到這一步的第一反應是：既然看到風險，那就 hedge 掉。尤其看到 delta 偏掉，直覺就想 hedge 回 0。但這一步在交易室裡沒有那麼乾淨。看見風險，只代表你知道 book 現在暴露在哪裡；它不代表所有風險都應該立刻、無條件、用任何成本消掉。真正要問的是三件事：這個風險現在有多急？hedge 要付多少 spread、slippage、market impact？hedge 完會留下什麼新風險？所以 hedge 不是 reflex，而是 risk conversion decision。你用 execution cost 和新的 market exposure，換掉當下 book 裡你最不想持有的風險。",
   "我們用最簡單的例子來看：一連串 option fills 後，trading delta = +100 lots。Case A 裡，futures spread 只有 1 tick，depth 足夠，市場平穩，quote 也沒有明顯 stale。這時候 hedge 成本低，執行風險也可控，留下 delta 的機會成本可能高於 hedge cost，你比較願意快速把一部分 delta 處理掉。Case B 完全不同，spread 變成 3 ticks，depth 變薄，市場正在快速跳動，option ask 又剛剛連續被打。這時候你 aggressively hedge，可能付非常高的 spread 和 slippage；如果市場瞬間反轉，可能剛 hedge 完又要 hedge 回來。更糟的是，這個 delta 可能不是單純 fill delta，而是 toxic flow 或 stale quote 造成的警訊。此時你可能要先 reduce quote、widen、cancel stale orders，再小心處理 hedge，不一定是無腦打到 0。所以同樣 +100 delta，在兩種市場狀態下，合理 hedge decision 不一樣。Delta 是一個數字，但 hedge 是市場狀態下的執行決策。最殘酷的地方是：越需要 hedge 的時候，hedge 往往越貴、越難、越容易出錯。",
   "這和課本裡的 delta hedge 有什麼差別？理論版本裡，delta hedge 是 dynamic replication：價格連續變動，你連續調整；交易沒有成本；underlying 有無限 liquidity；你可以精準把 delta hedge 到 0。但 desk 版本完全不同。你只能離散地 hedge，每一次 hedge 都要付成本。看到 delta、送出 order、order 進市場，中間有 latency。你想 hedge 的 size 可能超過當下 depth。你以為的 delta 也不是神聖數字，它依賴當下 surface、model、snapshot timing，甚至 underlying 是否已經 move。所以實務上的 hedge rule 不是「看到 delta 就歸零」。它更像一個 policy：什麼 delta range 可以忍受？什麼 market state 要立刻降低 exposure？什麼用 passive？什麼必須 aggressive？什麼情況不是先 hedge，而是先 reduce quote 或 stop quoting？In theory, hedge removes exposure；on the desk, hedge transforms exposure at a cost。",
-  "在討論 hedge rule 之前，還有一個更根本的問題：你到底在 hedge 哪一種 delta？很多人看到 total delta 偏掉就想全部 hedge 回 0，但 total delta 裡面其實有不同來源。有些是 position delta，可能是昨日留下、或 trader 有意識接受的方向風險，這種比較適合留給 trader discretion。有些是 trading delta，今天 option fills 直接帶來的，這種比較適合用 rule-based hedge policy 處理。還有 gamma-grown delta：市場 move 後，short gamma 讓 delta 自己長出來，這種 delta 危險的不只是當下數字，而是它的 growth rate；如果 short gamma 又遇到 trend，delta 越不 hedge 長得越快。最後是 model 或 surface error：你以為 delta 是 +100，但如果 vol surface、skew、forward 已經變了，這只是舊模型下的數字。所以 hedge policy 不能只看 total delta，要先問：這個 delta 從哪裡來？我願不願意持有？它會不會繼續長？我要 hedge 的是真正風險，還是在追一個不準的數字？",
-  "Hedge 不是免費保險，成本會一層層吃掉 edge。第一層是 bid-ask spread 和 fee，最容易看到。第二層是 slippage，你想成交的 size 會吃掉多檔 depth。第三層是 market impact，你的 hedge order 本身會推動價格。第四層是 latency risk，你決定 hedge 那一刻和真正成交那一刻，市場已經變了。還有一層特別討厭：whipsaw。你剛因為 delta 偏掉而 hedge，市場馬上反轉，你又要 hedge 回來。Option fill 收的 1 tick edge，可能就被一輪來回 hedge 洗成 -0.6 tick。所以 hedge 不是免費保險。它是用確定或半確定的交易成本，去換比較低的方向風險。Hedge 太頻繁，你 bleed execution cost；hedge 太慢，你 warehouse path risk。最佳 hedge frequency 不是固定常數，而是 realized movement、spread、liquidity、gamma profile 和 risk appetite 的函數。如果你 long gamma 但市場只在小區間震盪，越常 hedge 不一定越好，這也為下一章的 gamma bleed 埋伏筆。",
   "因為 hedge 有成本，實務上很多 desk 不會把每一點 delta 都追到 0。更常見的是 target range。Delta 小的時候，先忍受，因為 hedge 成本可能大於降低風險的好處。進入 review range，開始考慮 passive hedge。再大、或 short gamma 讓 delta 可能繼續長，提高 hedge priority。接近 limit 就不只是 hedge 問題，還可能要 reduce option quote、降低同方向 flow，甚至暫停某些 strikes。所以 hedge target 不是追求漂亮的 0。0 在報表上很好看，但如果為了維持 0，你每幾秒付一次 spread，長期只是把 P&L 磨掉。Target range 也不是放任，它是承認市場有成本後，把可忍受和不可忍受的風險分層。Zero is a clean number, a target range is a trading policy。可以順手丟個問題：如果 futures spread 從 1 tick 變成 4 ticks，你的 target range 應該變窄還是變寬？這題沒有單一答案 — spread 變寬代表 hedge cost 上升，可能讓你忍受較大 delta；但 spread 變寬也可能是市場變危險，risk limit 反而需要更保守。這正是條件決策的精髓。",
   "現在我們把這些因素合成一張 decision table。Delta 小、futures spread 又寬，立刻 hedge 可能只是付成本買心理安慰，比較合理的是 monitor，等 delta 變大或 spread 收斂。Delta 中等、spread 窄、depth 足夠，可以 passive hedge 慢慢拉回 target range，因為時間壓力還不大。Delta 大、market move 又快時，留下 delta 的風險可能大過 execution cost，aggressive hedge 才合理。Short gamma 又遇到 trend market，delta 不是靜態數字，它會繼續長，這會提高 hedge priority。Liquidity 變薄、spread 變寬時更微妙：你很想 hedge，但大 size 會 slippage，這時候要切小單，並降低 option quote size。Inventory 接近 limit 時，hedge target 也會變保守，先讓 book 回到安全區。最後一列最重要：如果懷疑 fills 是因為 quote stale 或 toxic flow，單純 hedge 治標不治本 — 你要先 cancel 或 reprice option quotes，否則 hedge 一筆，後面又被同樣錯誤的 quote 打進更多風險。Bad quotes create hedge demand faster than hedging can clean it up。所以 hedge action 不只是送出一筆 order，它經常和 quote control、size control、surface recheck、risk limit 同時發生。",
-  "很多人會把 hedge 當作故事結束：看到 delta，hedge 掉，完成。但對 market maker 來說，hedge 本身也要被評估。你原本想降低 +100 delta，最後真的降到目標區間了嗎？只成交到一部分？slippage 是否比預期高？hedge 後市場是否反轉，讓你又要 hedge 回來？hedge 完以後，delta 降了，但 short gamma、vega、skew concentration 是否仍存在？更重要的是，這次 hedge 經驗會回饋到下一次規則。某種 market state 下 aggressive hedge 長期成本太高，threshold 也許要調。某類 toxic fill 經常造成高成本 hedge，那也許不是 hedge rule 的問題，而是 quote rule 或 flow filter 的問題。所以 hedge 也需要 attribution：這是 risk reduction、execution cost 和 residual exposure 三件事的綜合判斷，不是只看 delta 有沒有歸零。這也為第七章的 P&L attribution 埋伏筆 — attribution 不只拆 quote，也要拆 hedge cost 和 hedge timing。",
-  "第五章的收束是這句話：hedge 會改變風險的形狀，不會讓風險消失。你可以用 futures 把 delta 降下來，但你付出了 execution cost。你可以降低方向曝險，但仍然有離散 hedge error。你可以把一階風險壓低，但 short gamma、theta、vanna、volga、skew 和 liquidity risk 還在。看左右兩張 risk shape：hedge 之前 directional delta 是最大風險；hedge 之後 delta 接近 0，但 execution cost 已經付出，vanna / volga / gap / liquidity 等高階風險變得明顯可見。這也是為什麼下一章很重要。很多人看到 delta neutral、vega neutral 就以為 book 安全，但中性只是局部截面，市場不是只沿著你 hedge 掉的那條軸移動。下一章我們就要看：為什麼一個看起來已經 hedged、delta 和 vega 都接近 0 的 book，最後還是會虧錢？這是 gamma bleed、surface deformation、gap risk 和 pin risk 共同回答的問題。",
   "進入第六章。一個 delta、vega 都接近 0 的 book，看起來安全 — 但實務上常常還會虧錢。為什麼？這一章要把『中性』這個詞打開來：neutral 只是局部截面，市場不會只沿著你 hedge 掉的那條軸移動。我會用四個案例組成一個答案 — gamma bleed 講路徑與成本，discrete hedging error 講為什麼同樣 realized vol 結果完全不同，surface deformation 講 vanna / volga / skew，gap 講不可交易的路徑。聽完這四個，各位會明白為什麼 desk 上『我已經 hedge 了』從來不是故事結束。",
   "上一章我們已經把 trading delta 從 +100 hedge 到接近 0。在課本直覺裡，這應該是故事結束 — risk 看起來都被 neutralize 掉了。但 desk 上完全不是這樣。Hedge 不是把風險消滅，它是把風險換成另一種形狀。你壓低了 directional delta，但你也付出了 execution cost；你降低了一階曝險，但 short gamma、theta、vanna / volga、skew、gap、pin 這些風險仍然在 book 裡，而且現在它們的相對重要性反而變大了。所以這一章我要做的事情是：把「hedged book」這個看起來安全的標籤打開來，問你 hedge 完之後，到底還剩下什麼。重點不是嚇人說 hedge 沒用 — hedge 非常有用 — 重點是讓你理解 hedge 的邊界，知道哪些風險不會被 delta hedge 處理掉，並且學會把它們當成 book 的一部分繼續管理。",
   "這頁我把問題講到最尖銳：Delta 接近 0、Vega 接近 0，那為什麼 P&L 還會動？答案是 neutral 描述的是你壓平了什麼，P&L 揭露的是你漏掉了什麼。Delta neutral 通常只代表在當下、當前模型、small move 下，一階方向曝險接近 0；它不保護 gap 或離散 hedge error。Long gamma 聽起來是好事，但如果市場波動不夠大、hedge cost 又高，你可能不是在賺 realized vol，而是在 bleed 成本。Vega neutral 通常指的是 parallel vol shift；但市場真正動的是整張 surface — skew、wing、term structure 一起變，vanna / volga 立刻出來。日內 hedge 完不代表 overnight 安全，event gap、auction gap 沒有可交易的中間價。到期接近時，行權與 settlement 也會把 option risk 轉成 underlying / futures position。所以這頁的核心句子是：Neutral 是對某條你選擇的軸的陳述；損失通常來自你沒選的軸。",
-  "在一個個案例展開之前，我先把 hedge 後仍然會影響 P&L 的風險，整理成四個來源。第一類是 path risk — 你不是在連續時間裡無成本 hedge，而是在離散時間裡追蹤一個會動的 delta；hedge timing 不同，realized P&L 就完全不同，這也是 gamma 與 theta 的 trade-off 所在。第二類是 execution risk — 每次 hedge 都有 spread、fee、slippage、latency、liquidity；這是用成本換安全。第三類是 surface risk — underlying 與 IV、skew、wing、term structure 不會單獨動，它們會一起變形，vanna / volga 在這裡發揮作用。第四類是 discontinuity / event risk — gap、auction、settlement、pin、exercise uncertainty，這些不是更高 hedge frequency 可以解決的問題。Residual risk is not noise, it has structure。這四類會出現在後面四個案例裡。",
   "第一個案例是 gamma bleed，這是最日常、也是 long gamma 最容易被誤解的地方。課本直覺很漂亮：long gamma 加上 delta hedge，市場漲你賣 futures、市場跌你買 futures，好像永遠 buy low sell high。但 desk 上每一次 hedge 都要付成本：spread、fee、slippage、latency。如果 underlying 只是在窄區間裡反覆穿過你的 hedge trigger，你 gamma scalping 抓到的小利潤可能還不夠付成本。Hedge trigger 太敏感被 noise 洗，太鈍又留下 path risk。所以 long gamma 真正賺的是 realized movement 超過 theta 加 execution cost 的部分；它不是免費彩票。這頁的視覺重點是：市場確實有動，但動得不夠大，且每一次 hedge 都打點付錢，最後 net 是負的。Gamma is valuable only if the path pays more than the cost of trading the path。",
   "第二個案例更深一層：同樣的 realized volatility，不代表同樣的 hedging P&L。看左右兩條 path：起點、終點、整體 range 都很接近，但形狀完全不同。Path A 是平滑的 zig-zag，價格連續來回，hedge 有很多分段調整的機會。Path B 是先一段跳空、再慢慢 drift，很多 delta 變化發生在你能 hedge 之前，跳空那段的風險直接落到你的 P&L 上。從日 sample 看，realized vol 可能差不多，但對 market maker 來說這完全是兩個世界。第一條是「可交易的 movement」，第二條是「不可交易的 jump 加殘餘 drift」。所以說「我 long gamma，所以我希望 realized vol 高」還不夠精準 — 你真正想要的是 liquidity-adjusted、可被你以合理成本 hedge 的 path。Volatility 在 market making 裡不只是統計量，它是路徑依賴的。",
   "第三個案例是最隱形也最容易被低估的：vanna / volga / skew。Book snapshot 上 delta 和 vega 都接近 0，看起來很乾淨。問題是這個「中性」通常是對 small underlying move、parallel vol shift 而言。但市場不會沿單一軸移動 — 股市下跌時 IV 通常上升、skew 變陡、downside wing 被重新定價、liquidity 同時變差。這時候 vanna 把「underlying 與 vol 一起動」翻譯成新的 delta；volga 把「vol 大幅變動」翻譯成新的 vega；skew / wing 把局部 strike region 的重新定價直接打進 P&L。你以為 delta hedge 掉了，underlying 一動 vol 一跳 delta 又長出來；你以為 vega 接近 0，但 long downside vega、short upside vega 在 skew steepening 下完全不是中性。所以這頁的句子是：Markets do not move one Greek at a time。Hedge 一個 Greek 不等於 hedge 整本 surface。",
-  "第四個案例是 gap risk — 這個在第一章已經出現過，當時是用來打破 continuous hedging 的直覺。這裡我把它放回 hedged book 的語境。週五收盤時你的 book 看起來很乾淨，delta 接近 0、hedge 也都做完了。週末發生事件，週一開盤 underlying 直接 gap down 3%、IV 同時跳上、liquidity 變薄。這時候問題不是你 hedge 慢，也不是你不想 hedge — 中間根本沒有可交易的市場。沒有價格、沒有成交、沒有可以逐步調整 delta 的路徑。Delta hedge 保護的是可交易路徑上的風險；gap risk 活在路徑不存在的地方。這一點很重要，因為它告訴你：有些風險不是把 hedge 速度提高就能解決的，它需要用 position size、event limit、vol buffer、scenario analysis 去管理。Faster hedging cannot act where there is no market。",
   "Pin risk 我用 30 秒帶過 — 它是一個很實務、很到期日特有的提醒。當 underlying 在結算日附近停留在 strike 周圍，小小的價格移動會讓 option 在價內 / 價外之間翻轉，delta 變得非常敏感，行權與被指派的結果也可能不確定。對 market maker 來說，到期不是風險自動消失，而是 option risk 被轉換 — 它可能變成 futures 或 spot 的 directional position，特別是在結算制度、auction、行權規則複雜的市場。這頁的核心句子很短：Expiration can transform risk instead of eliminating it。我不會在這裡展開不同市場的結算制度，這是 backup 或 Q&A 的素材；主線仍然是 hedged book 的 residual risk 需要被拆開。",
-  "整章收束在這個 transition：如果 hedged book 還會因為 path、cost、surface、gap、pin 產生 P&L，那收盤後只看 total P&L 就完全不夠。今天 P&L = +100 是好的一天嗎？是 quote 收 spread？是 delta 剛好站對方向？是 long gamma 抓到 realized move？是 vega 重估？是 skew 走在你身上？還是只是 hedge cost 沒算到？如果你不把它拆開，你就不知道下一次該繼續做什麼、該停掉什麼。Residual risk 解釋為什麼 P&L 會動；attribution 告訴你該修什麼。所以下一章我們要進 P&L attribution — 把結果拆回可改善的決策。我會從最危險的一個情境開始：今天賺了 +100，但這到底是 edge，還是只是剛好賭對方向？",
   "進入第七章。如果 hedged book 還會輸，光看 total P&L 就完全不夠。今天賺 +100 是好的一天嗎？我會用具體的 component 拆解告訴你 — 賺錢不等於做對。Attribution 不只是收盤後的會計報表，它應該改變明天的 quote、hedge、limit。這一章三張 slide 會回答三個問題：怎麼拆 P&L？每個 component 對應什麼可改善的決策？以及最重要的 — 怎麼分辨自己賺的是 edge 還是 luck？",
   "進入第七章。我用一個非常具體的場景：今天結束，total P&L = +100。直覺上這是好的一天，今天表現可以了。但這個直覺對 market maker 很危險。如果你只看 total，你不知道這 +100 是 market making 真的有 edge，還是只是 delta 剛好站對方向。把它拆開：spread P&L = -20，代表你今天報價、收 spread、控制 flow 這部分其實在賠錢。Delta P&L = +90，主要靠方向曝險。Vega P&L = +40，vol 重估帶一點。Hedge cost = -10。也就是說，今天 +100 主要是 directional 站對；market making 本業反而漏錢，只是被 delta 蓋過去。這頁要讓學生記住的是：總 P&L 是結果不是診斷，明天市場反轉，這個結構會直接翻負。賺錢不等於做對，賠錢也不等於做錯，關鍵在 component。",
   "所以 desk 真正用來檢視自己的工具是 P&L attribution。它把總 P&L 拆回七個 component，每個 component 對應一個你可以改善的決策。Spread / Edge 對應 quote 是否真的 capture edge — 如果負，可能是 quote 太寬被 cross 不到、太窄被 toxic flow 掃，或者 flow filter 有問題。Delta P&L 對應你是否留下方向曝險 — 它不一定壞，但要知道是有意還是無意。Gamma · Theta 對應 realized move 是否補償 theta 與 hedge cost。Vega 對應 vol level 是否被整體重估。Skew · Wing 對應 surface shape 是否變形。Hedge P&L 對應 hedge frequency 與 execution 品質。Residual 是 model error、latency、data issue、higher-order Greeks，這個 bucket 太大就要回去查 model。重點不是把每個 component 都歸零，而是讓每一塊都有人負責、能被診斷、能被修。",
@@ -4620,52 +4601,6 @@
   </section>
 
 
-  <!-- ============== Slide 1-1｜Where the Quote Problem Comes From ============== -->
-  <section data-screen-label="05 PDE vs Desk">
-    <div class="slide-std">
-      <div class="std-head">
-        <div>
-          <div class="eyebrow"><span class="dot"></span>Section 1 · Where the Quote Problem Comes From</div>
-          <h2 class="h-title">為什麼 fair value 不能直接變成 <span class="em">quote</span>？</h2>
-        </div>
-        <div class="page-meta dim">1-1</div>
-      </div>
-
-      <div class="two-q">
-        <div class="q-card left">
-          <div class="q-tag">PDE QUESTION</div>
-          <p class="q-asks">在<span class="em">乾淨世界</span>裡，<br>這個 option 應該值多少？</p>
-          <ul class="q-list">
-            <li>fair value</li>
-            <li>greeks</li>
-            <li>replication intuition</li>
-          </ul>
-        </div>
-
-        <div class="divider">
-          <div class="vline"></div>
-          <div class="label">Market<br>Frictions</div>
-          <div class="vline"></div>
-        </div>
-
-        <div class="q-card right">
-          <div class="q-tag">DESK QUESTION</div>
-          <p class="q-asks">在<span class="em">真實市場</span>裡，我願意用<br>什麼條件承擔這筆風險？</p>
-          <ul class="q-list">
-            <li>quote · size</li>
-            <li>hedge timing</li>
-            <li>risk limit</li>
-            <li>stop / cancel</li>
-          </ul>
-        </div>
-      </div>
-
-      <div class="std-foot">
-        <p class="closer">兩個問題看起來相近，但<span class="em">答案需要的資訊完全不同</span>。</p>
-      </div>
-    </div>
-  </section>
-
   <!-- ============== Slide 1-2｜PDE World vs P&L World ============== -->
   <section data-screen-label="06 PDE vs P&L World">
     <div class="slide-std">
@@ -4771,120 +4706,6 @@
     </div>
   </section>
 
-  <!-- ============== Slide 1-4｜Replication Leaves Residual P&L ============== -->
-  <section data-screen-label="08 Replication Residual">
-    <div class="slide-std">
-      <div class="std-head">
-        <div>
-          <div class="eyebrow"><span class="dot"></span>Section 1 · Replication Leaves Residual P&amp;L</div>
-          <h2 class="h-title">理論上是 replication，<br>實務上是<span class="em">帶成本的追蹤誤差</span>。</h2>
-        </div>
-        <div class="page-meta dim">1-4</div>
-      </div>
-
-      <div class="repl-grid">
-        <div class="repl-chart">
-          <div class="chart-tag">UNDERLYING PATH · HEDGE ACTIONS</div>
-          <svg viewBox="0 0 600 360" preserveAspectRatio="none">
-            <!-- baseline grid -->
-            <line x1="0" y1="180" x2="600" y2="180" stroke="#2a2a30" stroke-width="0.5" stroke-dasharray="2 6"/>
-            <!-- zig-zag underlying -->
-            <polyline points="0,200 80,140 160,210 240,90 320,150 400,80 480,200 560,130 600,170"
-                      stroke="#a39d91" stroke-width="1.5" fill="none"/>
-            <!-- hedge action dots with cost ticks -->
-            <g fill="oklch(0.74 0.12 65)">
-              <circle cx="80"  cy="140" r="6"/>
-              <circle cx="240" cy="90"  r="6"/>
-              <circle cx="320" cy="150" r="6"/>
-              <circle cx="400" cy="80"  r="6"/>
-              <circle cx="480" cy="200" r="6"/>
-              <circle cx="560" cy="130" r="6"/>
-            </g>
-            <!-- residual cost bar at bottom -->
-            <rect x="0" y="320" width="600" height="2" fill="#2a2a30"/>
-            <rect x="0" y="320" width="600" height="22" fill="oklch(0.55 0.08 65)" opacity="0.4"/>
-            <text x="12" y="336" fill="#ece8e1" font-family="JetBrains Mono, monospace" font-size="24">accumulated hedge cost →</text>
-          </svg>
-        </div>
-
-        <div class="repl-log">
-          <div class="log-tag">EXECUTION LOG</div>
-          <div class="log-row">
-            <span class="t">10:00</span>
-            <span class="a">delta = +20 lots</span>
-            <span class="c">—</span>
-          </div>
-          <div class="log-row">
-            <span class="t">10:03</span>
-            <span class="a">futures moved · delta → +45</span>
-            <span class="c">—</span>
-          </div>
-          <div class="log-row">
-            <span class="t">10:04</span>
-            <span class="a">hedge 40 lots</span>
-            <span class="c">paid spread</span>
-          </div>
-          <div class="log-row">
-            <span class="t">10:07</span>
-            <span class="a">market reversed · delta → −25</span>
-            <span class="c">—</span>
-          </div>
-          <div class="log-row">
-            <span class="t">10:08</span>
-            <span class="a">hedge back</span>
-            <span class="c">paid spread again</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="std-foot">
-        <p class="closer">你複製的是 payoff，<span class="em">還是在用交易成本追蹤一個會動的目標</span>？</p>
-      </div>
-    </div>
-  </section>
-
-  <!-- ============== Slide 1-5｜From Fair Value to Executable Quote ============== -->
-  <section data-screen-label="09 To Executable Quote">
-    <div class="slide-std">
-      <div class="std-head">
-        <div>
-          <div class="eyebrow"><span class="dot"></span>Section 1 · From Fair Value to Executable Quote</div>
-          <h2 class="h-title">PDE 給 fair value，<br>P&amp;L 決定 quote 需要<span class="em">加什麼保護</span>。</h2>
-        </div>
-        <div class="page-meta dim">1-5</div>
-      </div>
-
-      <div class="pipeline">
-        <div class="pipe-stage">
-          <div class="stage-tag">MODEL WORLD</div>
-          <h3 class="stage-name">Fair Value</h3>
-          <div class="stage-detail">pricing center</div>
-        </div>
-        <div class="pipe-arrow">→</div>
-        <div class="pipe-stage middle">
-          <div class="stage-tag">MARKET FRICTIONS</div>
-          <h3 class="stage-name"><span class="em">Cost · Latency · Liquidity · Gap · Surface</span></h3>
-          <div class="stage-detail">how much protection does the quote need?</div>
-        </div>
-        <div class="pipe-arrow">→</div>
-        <div class="pipe-stage">
-          <div class="stage-tag">TRADING DECISION</div>
-          <h3 class="stage-name">Bid / Ask<br>Size · Cancel</h3>
-          <div class="stage-detail">executable quote</div>
-        </div>
-      </div>
-
-      <div class="std-foot" style="display:flex;justify-content:space-between;align-items:flex-end;gap:60px;">
-        <p class="closer" style="margin:0;">下一個問題：<br>理論價 100，進入市場後<span class="em">到底應該報多少</span>？</p>
-        <div class="next-up">
-          <span class="label">Next</span>
-          <span class="arrow">→</span>
-          <span class="name">Section 2 · Fair Value → Quote</span>
-        </div>
-      </div>
-    </div>
-  </section>
-
   <!-- ============================================================ -->
   <!-- Chapter 2 · Fair Value → Quote                              -->
   <!-- ============================================================ -->
@@ -4921,61 +4742,6 @@
     </div>
   </section>
 
-
-  <!-- ============================================================ -->
-  <!-- Slide 2-1 · Fair Value Is Not a Market Price                -->
-  <!-- ============================================================ -->
-  <section data-screen-label="11 · Fair Value ≠ Market Price">
-    <div class="slide-std">
-      <div class="std-head">
-        <div>
-          <div class="eyebrow"><span class="dot"></span>Section 2 · Fair Value Is Not a Market Price</div>
-        <h2 class="h-title">Fair value 不是市場上的價格。</h2>
-        <p class="kicker">理論價是定價中心；報價是把這個中心放進市場狀態之後的決策。</p>
-        </div>
-        <div class="page-meta dim">2-1</div>
-      </div>
-
-      <div class="slide-body">
-        <div class="filter-flow">
-          <div class="ff-stage">
-            <span class="ff-tag">// MODEL OUTPUT</span>
-            <p class="ff-name">Fair Value <span class="em">= 100</span></p>
-            <div class="ff-detail">
-              PDE / model<br>
-              clean world, no friction
-            </div>
-          </div>
-          <div class="ff-arrow">→</div>
-          <div class="ff-stage center">
-            <span class="ff-tag">// MARKET STATE FILTER</span>
-            <p class="ff-name">Risk &amp; Friction</p>
-            <ul class="ff-list">
-              <li>Inventory</li>
-              <li>Hedge cost</li>
-              <li>Flow</li>
-              <li>Liquidity</li>
-              <li>Latency</li>
-              <li>Vol uncertainty</li>
-            </ul>
-          </div>
-          <div class="ff-arrow">→</div>
-          <div class="ff-stage">
-            <span class="ff-tag">// QUOTE DECISION</span>
-            <p class="ff-name">Bid / Ask / Size<br>/ Cancel ?</p>
-            <div class="ff-detail">
-              executable<br>
-              conditional on state
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="std-foot">
-        <p class="closer">如果 theoretical value 是 100，為什麼報價不一定是 99 / 101？</p>
-      </div>
-    </div>
-  </section>
 
   <!-- ============================================================ -->
   <!-- Slide 2-2 · Same Fair Value, Different Quotes               -->
@@ -5153,71 +4919,6 @@
   </section>
 
   <!-- ============================================================ -->
-  <!-- Slide 2-5 · Paper Edge vs Executable Edge                    -->
-  <!-- ============================================================ -->
-  <section data-screen-label="15 · Paper Edge vs Executable Edge">
-    <div class="slide-std">
-      <div class="std-head">
-        <div>
-          <div class="eyebrow"><span class="dot"></span>Section 2 · Paper Edge vs Executable Edge</div>
-        <h2 class="h-title">成交價比 fair value 好，不代表真的有 edge。</h2>
-        <p class="kicker">Paper edge 是模型上的數字；executable edge 要先扣掉 hedge、slippage、latency。</p>
-        </div>
-        <div class="page-meta dim">2-5</div>
-      </div>
-
-      <div class="slide-body">
-        <div class="waterfall">
-          <div class="wf-col">
-            <div class="wf-tag">SOLD ABOVE FAIR<br>fair = 100, fill = 101</div>
-            <div class="wf-bar">
-              <div class="seg pos" style="bottom: 0; height: 130px;"></div>
-            </div>
-            <div class="wf-val pos">+1.0</div>
-            <div class="wf-name">Paper Edge</div>
-          </div>
-          <div class="wf-col">
-            <div class="wf-tag">DELTA HEDGE<br>spread + fee + slip</div>
-            <div class="wf-bar">
-              <div class="seg neg" style="bottom: 50px; height: 80px;"></div>
-            </div>
-            <div class="wf-val neg">−0.6</div>
-            <div class="wf-name">Hedge Cost</div>
-          </div>
-          <div class="wf-col">
-            <div class="wf-tag">FUTURES SLIPPAGE<br>not the screen price</div>
-            <div class="wf-bar">
-              <div class="seg neg" style="bottom: 0; height: 50px;"></div>
-            </div>
-            <div class="wf-val neg">−0.4</div>
-            <div class="wf-name">Slippage</div>
-          </div>
-          <div class="wf-col">
-            <div class="wf-tag">QUOTE STALE<br>fair already moved</div>
-            <div class="wf-bar">
-              <div class="seg neg" style="bottom: -65px; height: 65px;"></div>
-            </div>
-            <div class="wf-val neg">−0.5</div>
-            <div class="wf-name">Latency / Move</div>
-          </div>
-          <div class="wf-col">
-            <div class="wf-tag">REAL EDGE<br>after frictions</div>
-            <div class="wf-bar">
-              <div class="seg net" style="bottom: -65px; height: 65px;"></div>
-            </div>
-            <div class="wf-val net">−0.5</div>
-            <div class="wf-name">Executable Edge</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="std-foot">
-        <p class="closer">Paper edge is measured at the model. Executable edge is measured <em style="color:var(--accent);font-style:normal">after hedge and latency</em>.</p>
-      </div>
-    </div>
-  </section>
-
-  <!-- ============================================================ -->
   <!-- Slide 2-6 · Flow / Toxicity Buffer                           -->
   <!-- ============================================================ -->
   <section data-screen-label="16 · Flow / Toxicity">
@@ -5321,63 +5022,6 @@
 
       <div class="std-foot">
         <p class="closer">Quote = fair value <em style="color:var(--accent);font-style:normal">+ risk compensation + participation decision</em>.</p>
-      </div>
-    </div>
-  </section>
-
-  <!-- ============================================================ -->
-  <!-- Slide 2-8 · From Quote to Fill                               -->
-  <!-- ============================================================ -->
-  <section data-screen-label="18 · Quote → Fill">
-    <div class="slide-std">
-      <div class="std-head">
-        <div>
-          <div class="eyebrow"><span class="dot"></span>Section 2 · From Quote to Fill</div>
-        <h2 class="h-title">Quote 放進市場後，會被 fill 測試。</h2>
-        <p class="kicker">到目前為止 quote 還是你的決策；接下來的 fill 是市場給你的回饋。</p>
-        </div>
-        <div class="page-meta dim">2-8</div>
-      </div>
-
-      <div class="slide-body">
-        <div class="qf-pipeline">
-          <div class="qf-stage">
-            <span class="qf-tag">// DECISION</span>
-            <h3 class="qf-name">Quote</h3>
-            <p class="qf-detail">price + size<br>+ conditions</p>
-          </div>
-          <div class="qf-arrow">→</div>
-          <div class="qf-stage middle">
-            <span class="qf-tag">// MARKET</span>
-            <h3 class="qf-name"><span class="em">Selection</span></h3>
-            <p class="qf-detail">someone chooses<br>to trade with you</p>
-          </div>
-          <div class="qf-arrow">→</div>
-          <div class="qf-stage">
-            <span class="qf-tag">// FEEDBACK</span>
-            <h3 class="qf-name">Fill</h3>
-            <p class="qf-detail">test of your<br>quote, in real time</p>
-          </div>
-        </div>
-
-        <div class="qf-paths">
-          <div class="qf-path">
-            <span class="pl">PATH A</span>
-            <p class="pt">No adverse move — spread captured cleanly.</p>
-          </div>
-          <div class="qf-path warn">
-            <span class="pl">PATH B</span>
-            <p class="pt">Market moves against you — quote was stale, or flow was toxic.</p>
-          </div>
-        </div>
-      </div>
-
-      <div class="std-foot">
-        <div class="next-up">
-          <span class="label">Next</span>
-          <span class="arrow">→</span>
-          <span class="name">Section 3 · Quote → Fill｜成交如何成為資訊</span>
-        </div>
       </div>
     </div>
   </section>
@@ -5524,106 +5168,6 @@
   </section>
 
   <!-- ============================================================ -->
-  <!-- Slide 3-3 · Post-Fill Path                                   -->
-  <!-- ============================================================ -->
-  <section data-screen-label="21 · Post-Fill Path">
-    <div class="slide-std">
-      <div class="std-head">
-        <div>
-          <div class="eyebrow"><span class="dot"></span>Section 3 · The Path After the Fill</div>
-          <h2 class="h-title">同一筆成交，<br>成交後路徑<span class="em">決定它的含義</span>。</h2>
-          <p class="kicker">起點都一樣 — 賣 1 口 ATM call @ 101, paper edge = +1 tick。</p>
-        </div>
-        <div class="page-meta dim">3-3</div>
-      </div>
-
-      <div class="slide-body">
-        <div class="anchor-strip">
-          <span class="as-tag">// COMMON ORIGIN</span>
-          <span class="as-key">Sell call <span class="acc">@ 101</span></span>
-          <span class="sep">·</span>
-          <span class="as-key">theo = <span class="acc">100</span></span>
-          <span class="sep">·</span>
-          <span class="as-key">paper edge <span class="acc">+1</span></span>
-        </div>
-
-        <div class="paths">
-          <div class="path-card">
-            <div class="pc-head">
-              <span class="pc-tag">PATH A</span>
-              <h3 class="pc-name">Benign</h3>
-            </div>
-            <div class="pc-chart">
-              <svg viewBox="0 0 200 100" preserveAspectRatio="none">
-                <line x1="0" y1="50" x2="200" y2="50" stroke="#5a564f" stroke-width="1" stroke-dasharray="3 4"/>
-                <polyline points="0,52 30,49 60,51 90,50 120,52 150,49 180,51 200,50" fill="none" stroke="#d99650" stroke-width="2"/>
-                <circle cx="0" cy="52" r="4" fill="#d99650"/>
-              </svg>
-            </div>
-            <div class="pc-detail">
-              <span class="pc-line">futures stable</span>
-              <span class="pc-line">IV stable</span>
-              <span class="pc-line">no nearby sweep</span>
-            </div>
-            <div class="pc-conclusion">→ likely liquidity demand</div>
-          </div>
-
-          <div class="path-card warn">
-            <div class="pc-head">
-              <span class="pc-tag">PATH B</span>
-              <h3 class="pc-name">Adverse</h3>
-            </div>
-            <div class="pc-chart">
-              <svg viewBox="0 0 200 100" preserveAspectRatio="none">
-                <line x1="0" y1="60" x2="200" y2="60" stroke="#5a564f" stroke-width="1" stroke-dasharray="3 4"/>
-                <polyline points="0,60 25,58 50,40 75,28 100,18 130,14 165,8 200,5" fill="none" stroke="#d99650" stroke-width="2.5"/>
-                <circle cx="0" cy="60" r="4" fill="#d99650"/>
-                <text x="170" y="22" fill="#d99650" font-family="JetBrains Mono" font-size="11">↑</text>
-              </svg>
-            </div>
-            <div class="pc-detail">
-              <span class="pc-line">futures jumps up</span>
-              <span class="pc-line">short call hurts</span>
-              <span class="pc-line">markout negative</span>
-            </div>
-            <div class="pc-conclusion">→ stale quote / informed flow</div>
-          </div>
-
-          <div class="path-card warn">
-            <div class="pc-head">
-              <span class="pc-tag">PATH C</span>
-              <h3 class="pc-name">Surface repricing</h3>
-            </div>
-            <div class="pc-chart">
-              <svg viewBox="0 0 200 100" preserveAspectRatio="none">
-                <line x1="0" y1="55" x2="200" y2="55" stroke="#5a564f" stroke-width="1" stroke-dasharray="3 4"/>
-                <polyline points="0,56 25,55 50,55 75,54 100,52 125,48 150,40 175,32 200,28" fill="none" stroke="#d99650" stroke-width="2"/>
-                <g fill="#d99650" opacity="0.6">
-                  <circle cx="60" cy="80" r="3"/>
-                  <circle cx="90" cy="78" r="3"/>
-                  <circle cx="125" cy="72" r="3"/>
-                  <circle cx="155" cy="66" r="3"/>
-                </g>
-                <circle cx="0" cy="56" r="4" fill="#d99650"/>
-              </svg>
-            </div>
-            <div class="pc-detail">
-              <span class="pc-line">nearby strikes swept</span>
-              <span class="pc-line">skew / wing repricing</span>
-              <span class="pc-line">same-expiry pressure</span>
-            </div>
-            <div class="pc-conclusion">→ local surface mispricing</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="std-foot">
-        <p class="closer">Fill diagnosis = <em>fill pattern + post-fill market reaction</em>.</p>
-      </div>
-    </div>
-  </section>
-
-  <!-- ============================================================ -->
   <!-- Slide 3-4 · Flow Diagnosis Map                               -->
   <!-- ============================================================ -->
   <section data-screen-label="22 · Flow Diagnosis Map">
@@ -5734,158 +5278,6 @@
 
       <div class="std-foot">
         <p class="closer">Adverse selection means <em>you weren't paid enough for being selected</em>.</p>
-      </div>
-    </div>
-  </section>
-
-  <!-- ============================================================ -->
-  <!-- Slide 3-6 · Fill Feedback Loop                               -->
-  <!-- ============================================================ -->
-  <section data-screen-label="24 · Fill Feedback Loop">
-    <div class="slide-std">
-      <div class="std-head">
-        <div>
-          <div class="eyebrow"><span class="dot"></span>Section 3 · Fill Feedback Loop</div>
-          <h2 class="h-title">好的 market maker 會讓 fill <span class="em">改變下一個 quote</span>。</h2>
-          <p class="kicker">每一筆成交都是市場對你 quote 的評分；下一個 quote 是你的回應。</p>
-        </div>
-        <div class="page-meta dim">3-6</div>
-      </div>
-
-      <div class="slide-body">
-        <div class="loop-grid">
-          <div class="loop-svg-wrap">
-            <svg class="loop-svg" viewBox="0 0 600 360">
-              <defs>
-                <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto">
-                  <path d="M0,0 L10,5 L0,10 z" fill="#d99650"/>
-                </marker>
-              </defs>
-              <!-- 4 nodes around a loop -->
-              <g font-family="JetBrains Mono, monospace" text-anchor="middle">
-                <g>
-                  <rect x="220" y="20" width="160" height="60" rx="2" fill="#1d1c19" stroke="#3a3833"/>
-                  <text x="300" y="48" fill="#a8a39b" font-size="12">// 01</text>
-                  <text x="300" y="68" fill="#f1ede4" font-size="18" font-weight="500">Quote</text>
-                </g>
-                <g>
-                  <rect x="430" y="150" width="160" height="60" rx="2" fill="#1d1c19" stroke="#3a3833"/>
-                  <text x="510" y="178" fill="#a8a39b" font-size="12">// 02</text>
-                  <text x="510" y="198" fill="#f1ede4" font-size="18" font-weight="500">Fill</text>
-                </g>
-                <g>
-                  <rect x="220" y="280" width="160" height="60" rx="2" fill="#1d1c19" stroke="#3a3833"/>
-                  <text x="300" y="308" fill="#a8a39b" font-size="12">// 03</text>
-                  <text x="300" y="328" fill="#f1ede4" font-size="18" font-weight="500">Diagnosis</text>
-                </g>
-                <g>
-                  <rect x="10" y="150" width="160" height="60" rx="2" fill="#1d1c19" stroke="#d99650"/>
-                  <text x="90" y="178" fill="#a8a39b" font-size="12">// 04</text>
-                  <text x="90" y="198" fill="#d99650" font-size="18" font-weight="500">Quote update</text>
-                </g>
-                <!-- arrows -->
-                <path d="M380 60 Q480 80 470 145" fill="none" stroke="#d99650" stroke-width="2" marker-end="url(#arr)"/>
-                <path d="M470 215 Q480 280 380 305" fill="none" stroke="#d99650" stroke-width="2" marker-end="url(#arr)"/>
-                <path d="M220 305 Q120 280 130 215" fill="none" stroke="#d99650" stroke-width="2" marker-end="url(#arr)"/>
-                <path d="M130 145 Q120 80 220 60" fill="none" stroke="#d99650" stroke-width="2" marker-end="url(#arr)"/>
-              </g>
-            </svg>
-          </div>
-
-          <div class="loop-actions">
-            <span class="la-tag">// QUOTE UPDATE — ACROSS FOUR LAYERS</span>
-            <div class="la-row">
-              <span class="la-key">price</span>
-              <div class="la-vals"><span class="v">move</span><span class="v">widen</span><span class="v">skew</span></div>
-            </div>
-            <div class="la-row">
-              <span class="la-key">size</span>
-              <div class="la-vals"><span class="v">reduce</span><span class="v">rebalance</span></div>
-            </div>
-            <div class="la-row">
-              <span class="la-key">hedge</span>
-              <div class="la-vals"><span class="v">faster</span><span class="v">more aggressive</span></div>
-            </div>
-            <div class="la-row">
-              <span class="la-key">surface</span>
-              <div class="la-vals"><span class="v">recheck vol</span><span class="v">skew / wing</span></div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="std-foot">
-        <p class="closer">A fill is not just an execution record — <em>it's a calibration signal for the next quote</em>.</p>
-      </div>
-    </div>
-  </section>
-
-  <!-- ============================================================ -->
-  <!-- Slide 3-7 · From Fill to Book Risk                           -->
-  <!-- ============================================================ -->
-  <section data-screen-label="25 · Fill → Book Risk">
-    <div class="slide-std">
-      <div class="std-head">
-        <div>
-          <div class="eyebrow"><span class="dot"></span>Section 3 · Fill Becomes Inventory</div>
-          <h2 class="h-title">Fill 不只提供資訊，<br>也會<span class="em">改變你的 book</span>。</h2>
-          <p class="kicker">同一筆成交：左邊是訊號，右邊是新的部位、新的 Greeks、新的 hedge demand。</p>
-        </div>
-        <div class="page-meta dim">3-7</div>
-      </div>
-
-      <div class="slide-body">
-        <div class="ticket-grid">
-          <div class="ticket">
-            <span class="tk-tag">// FILL TICKET</span>
-            <h3 class="tk-side">SELL 20</h3>
-            <div class="tk-rows">
-              <div class="tk-row"><span class="k">product</span><span class="v">ATM call</span></div>
-              <div class="tk-row"><span class="k">price</span><span class="v">@ 101</span></div>
-              <div class="tk-row"><span class="k">theo</span><span class="v">100</span></div>
-              <div class="tk-row"><span class="k">paper</span><span class="v">+1 tick</span></div>
-            </div>
-          </div>
-
-          <div class="ticket-arrow">→</div>
-
-          <div class="risk-dash">
-            <div class="rd-head">// BOOK RISK · POST-FILL</div>
-            <div class="rd-row">
-              <span class="rd-key">Delta</span>
-              <div class="rd-bar left"><div class="fill" style="width: 38%; left: 0;"></div></div>
-              <span class="rd-delta">+ short</span>
-            </div>
-            <div class="rd-row">
-              <span class="rd-key">Gamma</span>
-              <div class="rd-bar left"><div class="fill" style="width: 60%; left: 0; background: oklch(0.6 0.13 28); opacity: 0.75;"></div></div>
-              <span class="rd-delta">↑↑ short</span>
-            </div>
-            <div class="rd-row">
-              <span class="rd-key">Vega</span>
-              <div class="rd-bar left"><div class="fill" style="width: 52%; left: 0;"></div></div>
-              <span class="rd-delta">↑ short</span>
-            </div>
-            <div class="rd-row">
-              <span class="rd-key">Skew exposure</span>
-              <div class="rd-bar left"><div class="fill" style="width: 48%; left: 0;"></div></div>
-              <span class="rd-delta">concentrating</span>
-            </div>
-            <div class="rd-row">
-              <span class="rd-key">Hedge demand</span>
-              <div class="rd-bar left"><div class="fill" style="width: 65%; left: 0; background: oklch(0.6 0.13 28); opacity: 0.75;"></div></div>
-              <span class="rd-delta">delta to neutralize</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="std-foot">
-        <div class="next-up">
-          <span class="label">Next</span>
-          <span class="arrow">→</span>
-          <span class="name">Section 4 · Fill → Book｜單筆 trade 如何變成 book risk</span>
-        </div>
       </div>
     </div>
   </section>
@@ -6068,81 +5460,6 @@
   </section>
 
   <!-- ============================================================ -->
-  <!-- Slide 4-3 · From Trade Blotter to Risk Map                    -->
-  <!-- ============================================================ -->
-  <section data-screen-label="28 · Blotter → Risk Map">
-    <div class="slide-std">
-      <div class="std-head">
-        <div>
-          <div class="eyebrow"><span class="dot"></span>Section 4 · Re-coordinating the Trades</div>
-          <h2 class="h-title">Trade blotter 告訴你<span class="em">成交了什麼</span>；<br>risk map 告訴你<span class="em">留下了什麼</span>。</h2>
-          <p class="kicker">同一批交易，換一個座標系看，問題就不一樣。</p>
-        </div>
-        <div class="page-meta dim">4-3</div>
-      </div>
-
-      <div class="slide-body">
-        <div class="bem">
-          <div class="bem-col">
-            <span class="h">Trade Blotter</span>
-            <span class="sub">事件序列・歷史</span>
-            <div class="bem-blotter">
-              <div class="row"><span class="t">10:02</span><span class="a">SELL</span><span>20 C 100 Mar</span><span>@ 101</span></div>
-              <div class="row"><span class="t">10:04</span><span class="b">BUY</span><span>15 P 90 Mar</span><span>@ 87</span></div>
-              <div class="row"><span class="t">10:09</span><span class="a">SELL</span><span>10 C 105 Mar</span><span>@ 64</span></div>
-              <div class="row"><span class="t">10:13</span><span class="a">SELL</span><span>8 C 100 Mar</span><span>@ 102</span></div>
-              <div class="row"><span class="t">10:18</span><span class="b">BUY</span><span>5 P 85 Apr</span><span>@ 41</span></div>
-              <div class="row"><span class="t">10:21</span><span class="a">SELL</span><span>12 C 105 Mar</span><span>@ 63</span></div>
-              <div class="row"><span class="t">10:25</span><span class="b">BUY</span><span>4 C 110 Apr</span><span>@ 28</span></div>
-              <div class="row" style="color:var(--fg-dim);"><span></span><span>…</span><span>more fills</span><span></span></div>
-            </div>
-          </div>
-
-          <div class="bem-engine">
-            <div class="arrow">→</div>
-            <div>aggregate<br>+ Greeks<br>+ scenario</div>
-            <div class="arrow">→</div>
-          </div>
-
-          <div class="bem-col">
-            <span class="h">Risk Map</span>
-            <span class="sub">下一個市場狀態下的 vulnerability</span>
-            <div class="bem-risk">
-              <div class="panel">
-                <div class="lab">Net Delta</div>
-                <div class="delta-bar"><div class="fill"></div></div>
-              </div>
-              <div class="panel">
-                <div class="lab">Gamma · Expiry × Strike</div>
-                <div class="heat">
-                  <div class="corner"></div>
-                  <div class="col-h">85</div><div class="col-h">90</div><div class="col-h">100</div><div class="col-h">105</div><div class="col-h">110</div>
-                  <div class="row-h">Mar</div>
-                  <div class="cell h0"></div><div class="cell h1"></div><div class="cell h3"></div><div class="cell h2"></div><div class="cell h0"></div>
-                  <div class="row-h">Apr</div>
-                  <div class="cell h0"></div><div class="cell h0"></div><div class="cell h1"></div><div class="cell h0"></div><div class="cell h0"></div>
-                </div>
-              </div>
-              <div class="panel">
-                <div class="lab">Scenario P&amp;L · underlying ±2%</div>
-                <svg class="scen" viewBox="0 0 400 50" preserveAspectRatio="none">
-                  <line x1="0" y1="25" x2="400" y2="25" stroke="#3a3631" stroke-width="1" stroke-dasharray="2 4"/>
-                  <line x1="200" y1="0" x2="200" y2="50" stroke="#3a3631" stroke-width="1" stroke-dasharray="2 4"/>
-                  <path d="M 0 18 Q 80 14 140 22 T 200 26 Q 260 32 320 42 T 400 48" stroke="#d99650" stroke-width="2" fill="none"/>
-                </svg>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="std-foot">
-        <p class="closer">Trade data is <em style="color:var(--fg-mute);font-style:normal">event history</em>; Greeks and scenarios are <em style="color:var(--accent);font-style:normal">risk state</em>.</p>
-      </div>
-    </div>
-  </section>
-
-  <!-- ============================================================ -->
   <!-- Slide 4-4 · Risk Concentration                                -->
   <!-- ============================================================ -->
   <section data-screen-label="29 · Risk Concentration">
@@ -6268,71 +5585,6 @@
   </section>
 
   <!-- ============================================================ -->
-  <!-- Slide 4-6 · Scenario View                                     -->
-  <!-- ============================================================ -->
-  <section data-screen-label="31 · Scenario View">
-    <div class="slide-std">
-      <div class="std-head">
-        <div>
-          <div class="eyebrow"><span class="dot"></span>Section 4 · Risk Under Paths</div>
-          <h2 class="h-title">風險不是看現在，<br>是看市場路徑下<span class="em">會怎麼變形</span>。</h2>
-          <p class="kicker">起始 snapshot 看似中性 — 但市場不會停在這個截面上。</p>
-        </div>
-        <div class="page-meta dim">4-6</div>
-      </div>
-
-      <div class="slide-body">
-        <div class="scv">
-          <div class="scv-now">
-            <div class="meta">
-              <span class="h">Current Snapshot</span>
-              <span style="font-family:'JetBrains Mono',monospace; font-size:19px; color:var(--fg-dim);">t = now</span>
-            </div>
-            <div class="stack">
-              <span>Δ <span class="v">≈ 0</span></span>
-              <span>𝒱 <span class="v">≈ 0</span></span>
-              <span>Γ <span class="warn">short, near expiry</span></span>
-              <span>recent: <span class="warn">3 fills, ask hit, upside calls</span></span>
-            </div>
-          </div>
-
-          <div class="scv-paths">
-            <div class="scv-card">
-              <div class="head">
-                <span class="tag">PATH A</span>
-                <span class="move">underlying +2%</span>
-              </div>
-              <h3>Up move</h3>
-              <div class="effects">
-                <span>→ upside call <em class="em">delta grows</em></span>
-                <span>→ need to <em class="em">buy futures hedge</em></span>
-                <span>→ ask side may <em class="em">keep getting hit</em></span>
-              </div>
-            </div>
-
-            <div class="scv-card">
-              <div class="head">
-                <span class="tag">PATH B</span>
-                <span class="move">underlying −2% · IV +2 vol pts</span>
-              </div>
-              <h3>Down + vol up</h3>
-              <div class="effects">
-                <span>→ <em class="em">skew steepens</em></span>
-                <span>→ vanna shifts <em class="em">delta and vega</em></span>
-                <span>→ wing exposure <em class="em">re-emerges</em></span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="std-foot">
-        <p class="closer">Risk is not a number — <em style="color:var(--accent);font-style:normal">risk is a shape under scenarios</em>.</p>
-      </div>
-    </div>
-  </section>
-
-  <!-- ============================================================ -->
   <!-- Slide 4-7 · Neutral Is Local                                  -->
   <!-- ============================================================ -->
   <section data-screen-label="32 · Neutral Is Local">
@@ -6385,68 +5637,6 @@
       </div>
     </div>
   </section>
-
-  <!-- ============================================================ -->
-  <!-- Slide 4-8 · Book Risk → Hedge Decision                        -->
-  <!-- ============================================================ -->
-  <section data-screen-label="33 · Book Risk → Hedge">
-    <div class="slide-std">
-      <div class="std-head">
-        <div>
-          <div class="eyebrow"><span class="dot"></span>Section 4 · Closing</div>
-          <h2 class="h-title">看見風險，<br><span class="em">不代表立刻把它全部消掉</span>。</h2>
-          <p class="kicker">Hedge 有成本、有流動性限制、有執行風險 — 它本身就是另一個 trade。</p>
-        </div>
-        <div class="page-meta dim">4-8</div>
-      </div>
-
-      <div class="slide-body">
-        <div class="bth">
-          <div class="bth-side">
-            <span class="h">Book Risk Map</span>
-            <div class="lines">
-              <span>trading Δ <span class="warn">= +100 lots</span></span>
-              <span>Γ <span class="v">short, near expiry</span></span>
-              <span>𝒱 <span class="v">small, mixed by bucket</span></span>
-              <span>strike concentration <span class="warn">↑</span></span>
-              <span>hedge demand <span class="warn">accumulating</span></span>
-            </div>
-          </div>
-
-          <div class="bth-arrow">
-            <div class="a">→</div>
-            <div>same risk,<br>different<br>conditions</div>
-            <div class="a">→</div>
-          </div>
-
-          <div class="bth-fork">
-            <div class="case">
-              <span class="tag">CASE A</span>
-              <span class="desc"><span class="v">tight market</span> · futures spread 1 tick · depth 厚 · 平穩</span>
-              <span class="ask">hedge fast?</span>
-            </div>
-            <div class="case">
-              <span class="tag">CASE B</span>
-              <span class="desc"><span class="v">wide / fast market</span> · spread 3 ticks · depth 薄 · 跳動快</span>
-              <span class="ask">hedge to 0?</span>
-            </div>
-            <div class="question">兩種情境下，都<em>立刻 hedge 到 0</em> 嗎？</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="std-foot" style="display:flex;justify-content:space-between;align-items:flex-end;gap:60px;">
-        <p class="closer" style="margin:0;">Risk map tells you <em style="color:var(--fg-mute);font-style:normal">what you have</em> — hedge decision asks <em style="color:var(--accent);font-style:normal">what to transform now</em>.</p>
-        <div class="next-up">
-          <span class="label">Next</span>
-          <span class="arrow">→</span>
-          <span class="name">Section 5 · Book Risk → Hedge｜避險是條件決策</span>
-        </div>
-      </div>
-    </div>
-  </section>
-
-
 
   <!-- ============================================================ -->
   <!-- Chapter 5 · Book Risk → Hedge                                -->
@@ -6670,132 +5860,6 @@
   </section>
 
   <!-- ============================================================ -->
-  <!-- Slide 5-4 · What Are You Hedging?                              -->
-  <!-- ============================================================ -->
-  <section data-screen-label="37 · What Are You Hedging?">
-    <div class="slide-std">
-      <div class="std-head">
-        <div>
-          <div class="eyebrow"><span class="dot"></span>Section 5 · Decompose the Delta</div>
-          <h2 class="h-title">不是所有 delta，<br>都該用<span class="em">同一條規則</span>處理。</h2>
-          <p class="kicker">同樣的 total delta — <span class="em">不同來源代表不同決策權限</span>。</p>
-        </div>
-        <div class="page-meta dim">5-4</div>
-      </div>
-
-      <div class="slide-body">
-        <div class="s5wh">
-          <div class="s5wh-bar">
-            <span class="lbl">Total Δ = Position + Trading + Gamma-grown + Model error</span>
-            <div class="stack">
-              <div class="seg s1">Position +28</div>
-              <div class="seg s2">Trading +32</div>
-              <div class="seg s3">Γ-grown +22</div>
-              <div class="seg s4">Model ±18</div>
-            </div>
-          </div>
-
-          <div class="s5wh-rows">
-            <div class="src s1">
-              <div class="top"><span class="swatch"></span><span class="name">Position Δ</span></div>
-              <div class="q">這是我<em style="color:var(--fg);font-style:normal">本來就願意持有</em>的方向風險嗎？</div>
-              <div class="rule">trader discretion / risk view</div>
-            </div>
-            <div class="src s2">
-              <div class="top"><span class="swatch"></span><span class="name">Trading Δ</span></div>
-              <div class="q">這是今天 fills <em style="color:var(--accent);font-style:normal">直接創造</em>的風險嗎？</div>
-              <div class="rule">rule-based hedge policy</div>
-            </div>
-            <div class="src s3">
-              <div class="top"><span class="swatch"></span><span class="name">Γ-grown Δ</span></div>
-              <div class="q">市場 move 後，short gamma 讓 delta <em style="color:#c46a52;font-style:normal">長多快</em>？</div>
-              <div class="rule">growth rate matters most</div>
-            </div>
-            <div class="src s4">
-              <div class="top"><span class="swatch"></span><span class="name">Model error</span></div>
-              <div class="q">這個 delta <em style="color:var(--fg);font-style:normal">真的準</em>，還是 surface 已經變了？</div>
-              <div class="rule">recheck before hedging blind</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="std-foot">
-        <p class="closer">Same total delta does not mean same hedge urgency — <em style="color:var(--accent);font-style:normal">the source matters</em>.</p>
-      </div>
-    </div>
-  </section>
-
-  <!-- ============================================================ -->
-  <!-- Slide 5-5 · Hedge Cost Stack                                  -->
-  <!-- ============================================================ -->
-  <section data-screen-label="38 · Hedge Cost Stack">
-    <div class="slide-std">
-      <div class="std-head">
-        <div>
-          <div class="eyebrow"><span class="dot"></span>Section 5 · The Cost of Safety</div>
-          <h2 class="h-title">Hedge 不是免費保險，<br>成本會<span class="em">一層層吃掉 edge</span>。</h2>
-          <p class="kicker">Option fill +1.0 tick paper edge — <span class="em">hedge 完還剩多少？</span></p>
-        </div>
-        <div class="page-meta dim">5-5</div>
-      </div>
-
-      <div class="slide-body">
-        <div class="s5cost">
-          <div class="s5cost-fall">
-            <div class="row start">
-              <div class="lbl">Option paper edge</div>
-              <div class="bar"><div class="fill"></div></div>
-              <div class="num">+1.0</div>
-            </div>
-            <div class="divide"></div>
-            <div class="row cost">
-              <div class="lbl">Bid / ask spread</div>
-              <div class="bar"><div class="fill" style="left:60%;width:14%"></div></div>
-              <div class="num">−0.4</div>
-            </div>
-            <div class="row cost">
-              <div class="lbl">Slippage · depth</div>
-              <div class="bar"><div class="fill" style="left:46%;width:11%"></div></div>
-              <div class="num">−0.3</div>
-            </div>
-            <div class="row cost">
-              <div class="lbl">Latency move</div>
-              <div class="bar"><div class="fill" style="left:32%;width:14%"></div></div>
-              <div class="num">−0.4</div>
-            </div>
-            <div class="row cost">
-              <div class="lbl">Whipsaw / hedge-back</div>
-              <div class="bar"><div class="fill" style="left:14%;width:18%"></div></div>
-              <div class="num">−0.5</div>
-            </div>
-            <div class="divide"></div>
-            <div class="row end">
-              <div class="lbl"><strong style="color:var(--fg)">Net after hedge</strong></div>
-              <div class="bar"><div class="fill"></div></div>
-              <div class="num">−0.6</div>
-            </div>
-          </div>
-
-          <div class="s5cost-side">
-            <div class="h">每一層都不只是 fee</div>
-            <div class="item"><em>Spread / fee</em> · 顯性，最容易看</div>
-            <div class="item"><em>Slippage</em> · size 吃掉多檔 depth</div>
-            <div class="item"><em>Market impact</em> · hedge 自己推動價格</div>
-            <div class="item"><em>Latency</em> · 決定 hedge 與成交之間，市場已經動</div>
-            <div class="item"><em>Whipsaw</em> · 剛 hedge 完市場反轉，又要 hedge 回來</div>
-            <div class="q">你是在<em>降低風險</em>，還是在用過高成本<em>買安全感</em>？</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="std-foot">
-        <p class="closer">Hedge too often, you bleed cost — <em style="color:var(--accent);font-style:normal">hedge too slowly, you warehouse path risk</em>.</p>
-      </div>
-    </div>
-  </section>
-
-  <!-- ============================================================ -->
   <!-- Slide 5-6 · Hedge Target: Zero vs Range                        -->
   <!-- ============================================================ -->
   <section data-screen-label="39 · Zero vs Target Range">
@@ -6924,130 +5988,6 @@
       </div>
     </div>
   </section>
-
-  <!-- ============================================================ -->
-  <!-- Slide 5-8 · Hedge Feedback                                     -->
-  <!-- ============================================================ -->
-  <section data-screen-label="41 · Hedge Feedback">
-    <div class="slide-std">
-      <div class="std-head">
-        <div>
-          <div class="eyebrow"><span class="dot"></span>Section 5 · After the Hedge</div>
-          <h2 class="h-title">Hedge 完不是結束，<br>是<span class="em">下一輪風險診斷的開始</span>。</h2>
-          <p class="kicker">Hedge 本身也需要 attribution — <span class="em">它是 trading feedback loop 的一部分</span>。</p>
-        </div>
-        <div class="page-meta dim">5-8</div>
-      </div>
-
-      <div class="slide-body">
-        <div class="s5fb">
-          <div class="s5fb-loop">
-            <div class="step">
-              <div class="n">1</div>
-              <div class="body">
-                <span class="lbl">Hedge order</span>
-                <span class="desc">target Δ · sizing · passive vs aggressive</span>
-              </div>
-            </div>
-            <div class="step">
-              <div class="n">2</div>
-              <div class="body">
-                <span class="lbl">Execution quality</span>
-                <span class="desc">filled size · slippage · 與預期落差</span>
-              </div>
-            </div>
-            <div class="step">
-              <div class="n">3</div>
-              <div class="body">
-                <span class="lbl">Residual risk</span>
-                <span class="desc">remaining Δ · Γ · 𝒱 · skew · concentration</span>
-              </div>
-            </div>
-            <div class="step">
-              <div class="n">4</div>
-              <div class="body">
-                <span class="lbl">Hedge P&amp;L</span>
-                <span class="desc">option edge − hedge cost · 同期 underlying move</span>
-              </div>
-            </div>
-            <div class="step last">
-              <div class="n">5</div>
-              <div class="body">
-                <span class="lbl">Policy update</span>
-                <span class="desc">下次同情境，threshold / urgency / size 要不要改？</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="s5fb-side">
-            <div class="h">Hedge attribution 問四件事</div>
-            <div class="q">我真的降低了<em style="color:var(--accent);font-style:normal">想降低</em>的風險嗎？</div>
-            <div class="q">付出的 hedge cost <em style="color:var(--accent);font-style:normal">是否合理</em>？</div>
-            <div class="q">是否留下新的 <em style="color:var(--accent);font-style:normal">basis / liquidity / timing</em> 風險？</div>
-            <div class="q">同樣情境再來，<em style="color:var(--accent);font-style:normal">規則要不要改</em>？</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="std-foot">
-        <p class="closer">A hedge should be judged by <em style="color:var(--accent);font-style:normal">risk reduction, execution cost, and residual exposure</em>.</p>
-      </div>
-    </div>
-  </section>
-
-  <!-- ============================================================ -->
-  <!-- Slide 5-9 · From Hedge to Residual Risk                        -->
-  <!-- ============================================================ -->
-  <section data-screen-label="42 · Hedge → Residual Risk">
-    <div class="slide-std">
-      <div class="std-head">
-        <div>
-          <div class="eyebrow"><span class="dot"></span>Section 5 · Closing</div>
-          <h2 class="h-title">Hedge 改變風險的形狀，<br><span class="em">不會讓風險消失</span>。</h2>
-          <p class="kicker">一階下來了 — <span class="em">高階與執行風險長出來</span>。</p>
-        </div>
-        <div class="page-meta dim">5-9</div>
-      </div>
-
-      <div class="slide-body">
-        <div class="s5res">
-          <div class="col before">
-            <div class="h">Before hedge</div>
-            <div class="bars">
-              <div class="bar"><span class="lbl">directional Δ</span><span class="track"><span class="fill big" style="width:88%"></span></span><span class="num">+100</span></div>
-              <div class="bar"><span class="lbl">Γ exposure</span><span class="track"><span class="fill mid" style="width:55%"></span></span><span class="num">short</span></div>
-              <div class="bar"><span class="lbl">𝒱 exposure</span><span class="track"><span class="fill sm" style="width:30%"></span></span><span class="num">mixed</span></div>
-              <div class="bar"><span class="lbl">execution cost</span><span class="track"><span class="fill tiny" style="width:5%"></span></span><span class="num">—</span></div>
-              <div class="bar"><span class="lbl">vanna / volga</span><span class="track"><span class="fill sm" style="width:20%"></span></span><span class="num">—</span></div>
-              <div class="bar"><span class="lbl">gap / liquidity</span><span class="track"><span class="fill sm" style="width:25%"></span></span><span class="num">—</span></div>
-            </div>
-          </div>
-
-          <div class="col after">
-            <div class="h">After hedge</div>
-            <div class="bars">
-              <div class="bar"><span class="lbl">directional Δ</span><span class="track"><span class="fill tiny" style="width:12%"></span></span><span class="num">≈ 0</span></div>
-              <div class="bar"><span class="lbl">Γ exposure</span><span class="track"><span class="fill mid" style="width:55%"></span></span><span class="num">unchanged</span></div>
-              <div class="bar"><span class="lbl">𝒱 exposure</span><span class="track"><span class="fill sm" style="width:30%"></span></span><span class="num">unchanged</span></div>
-              <div class="bar"><span class="lbl">execution cost</span><span class="track"><span class="fill mid" style="width:38%"></span></span><span class="num">paid</span></div>
-              <div class="bar"><span class="lbl">vanna / volga</span><span class="track"><span class="fill mid" style="width:42%"></span></span><span class="num">visible</span></div>
-              <div class="bar"><span class="lbl">gap / liquidity</span><span class="track"><span class="fill mid" style="width:48%"></span></span><span class="num">visible</span></div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="std-foot" style="display:flex;justify-content:space-between;align-items:flex-end;gap:60px;">
-        <p class="closer" style="margin:0;">Hedging does not eliminate risk — <em style="color:var(--accent);font-style:normal">it changes which risks you now hold</em>.</p>
-        <div class="next-up">
-          <span class="label">Next</span>
-          <span class="arrow">→</span>
-          <span class="name">Section 6 · Hedged Book Still Loses｜中性為何仍會失效</span>
-        </div>
-      </div>
-    </div>
-  </section>
-
 
   <!-- ============================================================ -->
   <!-- Chapter 6 · Hedged Book Still Loses                          -->
@@ -7233,80 +6173,6 @@
 
       <div class="std-foot">
         <p class="closer">Markets do not move <em style="color:var(--fg-mute);font-style:normal">one Greek at a time</em> — neutral is a <em style="color:var(--accent);font-style:normal">local statement</em>, not an insurance policy.</p>
-      </div>
-    </div>
-  </section>
-
-
-  <!-- ============================================================ -->
-  <!-- Slide 6-3 · Residual Risk Map                                 -->
-  <!-- ============================================================ -->
-  <section data-screen-label="45 · Residual Risk Map">
-    <div class="slide-std">
-      <div class="std-head">
-        <div>
-          <div class="eyebrow"><span class="dot"></span>Section 6 · Residual Risk Has Structure</div>
-          <h2 class="h-title">Hedge 後剩下的風險，<br>可以分成<span class="em">四個來源</span>。</h2>
-          <p class="kicker">Residual risk is <em>not noise</em> — 它有結構，可以被命名、定價、管理。</p>
-        </div>
-        <div class="page-meta dim">6-3</div>
-      </div>
-
-      <div class="slide-body">
-        <div class="s6quad">
-          <div class="q">
-            <div class="ix">
-              <span class="n">01</span>
-              <span class="name">Path Risk</span>
-            </div>
-            <div class="items">
-              <span>· discrete hedging error</span>
-              <span>· gamma / theta trade-off</span>
-              <span>· realized path 不等於 realized vol</span>
-              <span>· hedge timing 決定 P&amp;L 形狀</span>
-            </div>
-          </div>
-          <div class="q">
-            <div class="ix">
-              <span class="n">02</span>
-              <span class="name">Surface Risk</span>
-            </div>
-            <div class="items">
-              <span>· vanna · vol 與 underlying 一起動</span>
-              <span>· volga · vol 自己大幅變動</span>
-              <span>· skew / wing 局部重新定價</span>
-              <span>· term structure shift</span>
-            </div>
-          </div>
-          <div class="q">
-            <div class="ix">
-              <span class="n">03</span>
-              <span class="name">Execution Risk</span>
-            </div>
-            <div class="items">
-              <span>· spread / fee / slippage</span>
-              <span>· hedge latency · whipsaw</span>
-              <span>· hedge instrument liquidity</span>
-              <span>· market impact 自己推動價格</span>
-            </div>
-          </div>
-          <div class="q">
-            <div class="ix">
-              <span class="n">04</span>
-              <span class="name">Discontinuity / Event Risk</span>
-            </div>
-            <div class="items">
-              <span>· overnight / weekend gap</span>
-              <span>· auction / settlement</span>
-              <span>· trading halt · liquidity vacuum</span>
-              <span>· pin · exercise uncertainty</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="std-foot">
-        <p class="closer">Hedged book 的損益 — 通常不是<em style="color:var(--fg-mute);font-style:normal">單一原因</em>，而是<em style="color:var(--accent);font-style:normal">這四類一起作用</em>。</p>
       </div>
     </div>
   </section>
@@ -7566,88 +6432,6 @@
 
 
   <!-- ============================================================ -->
-  <!-- Slide 6-7 · Gap Risk                                          -->
-  <!-- ============================================================ -->
-  <section data-screen-label="49 · Case · Gap Risk">
-    <div class="slide-std">
-      <div class="std-head">
-        <div>
-          <div class="eyebrow"><span class="dot"></span>Section 6 · Case 4 · Discontinuity</div>
-          <h2 class="h-title">Gap risk 不是 hedge 慢 —<br>是<span class="em">中間沒有市場</span>。</h2>
-          <p class="kicker">Delta hedge protects along <em>tradable paths</em> — gap risk lives where the path is not tradable.</p>
-        </div>
-        <div class="page-meta dim">6-7</div>
-      </div>
-
-      <div class="slide-body">
-        <div class="s6gap">
-          <div class="s6gap-tl">
-            <div class="hdr">
-              <span>Friday 16:30 close</span>
-              <span style="color:rgba(255,255,255,0.3);">— no market —</span>
-              <span style="color:#c46a52;">Monday 09:00 open</span>
-            </div>
-            <svg viewBox="0 0 900 260" preserveAspectRatio="none">
-              <!-- horizontal mid line -->
-              <line x1="0" y1="100" x2="900" y2="100" stroke="rgba(255,255,255,0.15)" stroke-dasharray="3 4"/>
-              <text x="10" y="96" font-family="JetBrains Mono" font-size="11" fill="rgba(255,255,255,0.4)">100</text>
-
-              <!-- Friday segment -->
-              <path d="M 30 100 L 70 95 L 110 105 L 150 92 L 190 102 L 230 96 L 270 100 L 310 98"
-                    fill="none" stroke="#e8dfcc" stroke-width="2"/>
-              <!-- Friday close marker -->
-              <circle cx="310" cy="98" r="5" fill="#e8dfcc"/>
-              <text x="180" y="170" font-family="JetBrains Mono" font-size="13" fill="rgba(255,255,255,0.6)" text-anchor="middle">delta ≈ 0 · book hedged</text>
-
-              <!-- weekend void band -->
-              <rect x="320" y="20" width="240" height="220" fill="rgba(196,106,82,0.05)" stroke="rgba(196,106,82,0.4)" stroke-dasharray="4 5" stroke-width="1"/>
-              <text x="440" y="135" font-family="JetBrains Mono" font-size="14" fill="#c46a52" text-anchor="middle">— no executable prices —</text>
-              <text x="440" y="155" font-family="JetBrains Mono" font-size="12" fill="rgba(196,106,82,0.7)" text-anchor="middle">no hedge opportunity · no quotes</text>
-
-              <!-- gap dashed jump -->
-              <path d="M 310 98 L 570 175" fill="none" stroke="rgba(196,106,82,0.4)" stroke-width="1.4" stroke-dasharray="2 4"/>
-
-              <!-- Monday open: gap down -->
-              <circle cx="570" cy="175" r="5" fill="#c46a52"/>
-              <text x="570" y="200" font-family="JetBrains Mono" font-size="13" fill="#c46a52" text-anchor="middle">gap −3% · IV ↑</text>
-              <!-- Monday continuation -->
-              <path d="M 570 175 L 610 178 L 650 170 L 690 182 L 730 175 L 770 185 L 810 178 L 860 188"
-                    fill="none" stroke="#c46a52" stroke-width="2"/>
-
-              <!-- annotation: re-grown delta -->
-              <text x="720" y="215" font-family="JetBrains Mono" font-size="13" fill="rgba(196,106,82,0.85)" text-anchor="middle">delta re-grew · IV repriced · liquidity thin</text>
-
-              <!-- timeline ticks -->
-              <g stroke="rgba(255,255,255,0.3)">
-                <line x1="30" y1="240" x2="30" y2="246"/>
-                <line x1="310" y1="240" x2="310" y2="246"/>
-                <line x1="570" y1="240" x2="570" y2="246"/>
-                <line x1="860" y1="240" x2="860" y2="246"/>
-              </g>
-              <line x1="30" y1="243" x2="860" y2="243" stroke="rgba(255,255,255,0.18)"/>
-            </svg>
-            <div class="legend">
-              <div class="it"><span class="k">FRIDAY</span><span class="v">delta ≈ 0 · all hedges done</span></div>
-              <div class="it miss"><span class="k">WEEKEND</span><span class="v">no market · no hedge · no quote</span></div>
-              <div class="it miss"><span class="k">MONDAY OPEN</span><span class="v">gap, IV up, liquidity thin</span></div>
-            </div>
-          </div>
-
-          <div class="s6gap-bottom">
-            <p class="big" style="margin:0;">你不是<em>不想 hedge</em> — 你是<em>沒有地方 hedge</em>。</p>
-            <p style="margin:0;font-size:14px;color:var(--fg-mute);font-family:JetBrains Mono,monospace;">faster hedging cannot act where there is no market</p>
-          </div>
-        </div>
-      </div>
-
-      <div class="std-foot">
-        <p class="closer">Gap risk 要用 <em style="color:var(--accent);font-style:normal">position size · event limit · vol buffer</em> 管理 — 不是靠提高 hedge frequency。</p>
-      </div>
-    </div>
-  </section>
-
-
-  <!-- ============================================================ -->
   <!-- Slide 6-8 · Pin Risk                                          -->
   <!-- ============================================================ -->
   <section data-screen-label="50 · Quick Note · Pin Risk">
@@ -7725,63 +6509,6 @@
 
       <div class="std-foot">
         <p class="closer">Expiration <em style="color:var(--fg-mute);font-style:normal">does not eliminate risk</em> — <em style="color:var(--accent);font-style:normal">it transforms it</em>.</p>
-      </div>
-    </div>
-  </section>
-
-
-  <!-- ============================================================ -->
-  <!-- Slide 6-9 · From Residual Risk to P&L Attribution             -->
-  <!-- ============================================================ -->
-  <section data-screen-label="51 · Residual Risk → P&L Attribution">
-    <div class="slide-std">
-      <div class="std-head">
-        <div>
-          <div class="eyebrow"><span class="dot"></span>Section 6 · Closing</div>
-          <h2 class="h-title">Hedged book <span class="em">還會輸</span> —<br>所以 P&amp;L 必須<span class="em">被拆開</span>。</h2>
-          <p class="kicker">Residual risk explains <em>why P&amp;L moves</em> — attribution tells you <em>what to fix</em>.</p>
-        </div>
-        <div class="page-meta dim">6-9</div>
-      </div>
-
-      <div class="slide-body">
-        <div class="s6trans">
-          <div class="s6trans-card left">
-            <span class="h">Today's blotter</span>
-            <div class="pnl">today P&amp;L = + 100</div>
-            <span class="h" style="padding-top:4px;">but why?</span>
-            <div class="qs">
-              <span class="q">是 <em style="color:var(--fg);font-style:normal;font-weight:500;">quote 收 spread</em> 嗎？</span>
-              <span class="q">是 <em style="color:var(--fg);font-style:normal;font-weight:500;">delta 剛好站對方向</em> 嗎？</span>
-              <span class="q">是 <em style="color:var(--fg);font-style:normal;font-weight:500;">long gamma 抓到 realized move</em>？</span>
-              <span class="q">是 <em style="color:var(--fg);font-style:normal;font-weight:500;">vega / skew 重新定價</em>？</span>
-              <span class="q">還是 <em style="color:#c46a52;font-style:normal;font-weight:500;">hedge cost / residual error</em>？</span>
-            </div>
-            <p style="margin:0;font-size:14px;color:var(--fg-mute);padding-top:10px;border-top:1px dashed var(--rule);">沒有拆開 — 你不知道下一次該繼續做什麼，該停掉什麼。</p>
-          </div>
-
-          <div class="s6trans-card right">
-            <span class="h">Next · P&amp;L Attribution</span>
-            <div class="residuals">
-              <div class="r"><span class="k">01</span><span class="name">Spread / Edge Capture</span><span class="tag">QUOTE</span></div>
-              <div class="r"><span class="k">02</span><span class="name">Delta P&amp;L</span><span class="tag">DIRECTION</span></div>
-              <div class="r"><span class="k">03</span><span class="name">Gamma · Theta</span><span class="tag">PATH</span></div>
-              <div class="r"><span class="k">04</span><span class="name">Vega · Vanna · Volga</span><span class="tag">SURFACE</span></div>
-              <div class="r"><span class="k">05</span><span class="name">Skew · Wing</span><span class="tag">SURFACE</span></div>
-              <div class="r"><span class="k">06</span><span class="name">Hedge Cost · Slippage</span><span class="tag">EXEC</span></div>
-              <div class="r"><span class="k">07</span><span class="name">Residual · Model · Latency</span><span class="tag">UNKNOWN</span></div>
-            </div>
-            <p style="margin:0;font-size:14px;color:var(--accent);padding-top:6px;border-top:1px dashed var(--rule);">Attribution = 把結果拆回可改善的決策。</p>
-          </div>
-        </div>
-      </div>
-
-      <div class="std-foot">
-        <div class="next-up">
-          <span class="label">Next</span>
-          <span class="arrow">→</span>
-          <span class="name">Section 7 · P&amp;L Attribution｜把結果拆回可改善的決策</span>
-        </div>
       </div>
     </div>
   </section>
