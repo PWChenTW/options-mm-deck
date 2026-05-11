@@ -4441,11 +4441,6 @@
           <p class="chap-hook">同樣的 fair value，<span class="em">在不同 market state 下</span> — 為什麼 quote 不一樣？</p>
         </div>
       </div>
-
-      <div class="chap-foot">
-        <span class="meta">PDE 世界 → 摩擦 → 可成交 quote</span>
-        <span class="arrow">→</span>
-      </div>
     </div>
   </section>
 
@@ -4536,13 +4531,13 @@
           </div>
           <div class="timeline-pnl">
             <div class="seg left">
-              <span class="lbl">Friday close · delta ≈ 0</span>
+              <span class="lbl">週五收盤 · delta ≈ 0</span>
               <span class="marker"></span>
             </div>
             <div class="void">NO MARKET · WEEKEND</div>
             <div class="seg right">
               <span class="marker"></span>
-              <span class="lbl">Monday open · gap −3%, IV ↑</span>
+              <span class="lbl">週一開盤 · gap -3%、IV ↑</span>
             </div>
           </div>
         </div>
@@ -4580,11 +4575,6 @@
           <p class="chap-hook">Fair value 是 <span class="em">中心</span> — quote 是 <span class="em">承擔風險的條件</span>。</p>
         </div>
       </div>
-
-      <div class="chap-foot">
-        <span class="meta">inventory · hedge cost · flow · liquidity · 速度</span>
-        <span class="arrow">→</span>
-      </div>
     </div>
   </section>
 
@@ -4598,7 +4588,6 @@
         <div>
           <div class="eyebrow"><span class="dot"></span>Section 2 · 同樣 fair value，不同 quote</div>
         <h2 class="h-title">理論價 100，不代表我會報 99 / 101。</h2>
-        <p class="kicker">同一個 fair value，可以對應四種完全不同的 quote decision。</p>
         </div>
         <div class="page-meta dim">2-2</div>
       </div>
@@ -4609,28 +4598,28 @@
         <div class="quote-cards" style="margin-top: 28px;">
           <div class="qc">
             <span class="qc-tag">// CASE A · CLEAN</span>
-            <h3 class="qc-name">Normal market</h3>
+            <h3 class="qc-name">正常市場</h3>
             <div class="qc-quote"><span class="acc">99</span><span class="x">/</span><span class="acc">101</span><br><span style="font-size:24px;color:var(--fg-mute)">size 50 × 50</span></div>
             <p class="qc-reason">Book 乾淨、hedge 成本可控、市場平穩。雙邊正常參與。</p>
           </div>
 
           <div class="qc">
             <span class="qc-tag">// CASE B · INVENTORY</span>
-            <h3 class="qc-name">Inventory skew</h3>
+            <h3 class="qc-name">Inventory 偏斜</h3>
             <div class="qc-quote"><span class="acc">96</span><span class="x">/</span><span class="acc">101</span><br><span style="font-size:24px;color:var(--fg-mute)">size 10 × 40</span></div>
             <p class="qc-reason">已 long 同方向 calls。Bid 拉遠 + 縮小，把下一筆推回中性。</p>
           </div>
 
           <div class="qc">
             <span class="qc-tag">// CASE C · FAST / TOXIC</span>
-            <h3 class="qc-name">Fast market</h3>
+            <h3 class="qc-name">快速市場</h3>
             <div class="qc-quote"><span class="acc">98</span><span class="x">/</span><span class="acc">106</span><br><span style="font-size:24px;color:var(--fg-mute)">size 5 × 5</span></div>
             <p class="qc-reason">Quote 容易 stale、hedge 成本高。寬 spread + 小 size 換 latency buffer。</p>
           </div>
 
           <div class="qc cancel">
             <span class="qc-tag">// CASE D · NO QUOTE</span>
-            <h3 class="qc-name">Stop quoting</h3>
+            <h3 class="qc-name">停報</h3>
             <div class="qc-quote"><span class="acc">cancel</span><br><span style="font-size:24px;color:var(--fg-mute)">size 0 × 0</span></div>
             <p class="qc-reason">超出可定價或可 hedge 範圍。不成交也是一種交易決策。</p>
           </div>
@@ -4651,7 +4640,6 @@
         <div>
           <div class="eyebrow"><span class="dot"></span>Section 2 · Quote 是一組決策</div>
         <h2 class="h-title">Quote 不是一個價格，而是一組交易條件。</h2>
-        <p class="kicker">Bid、ask、size、refresh、cancel 是同一個決策的不同維度。</p>
         </div>
         <div class="page-meta dim">2-3</div>
       </div>
@@ -4701,7 +4689,6 @@
         <div>
           <div class="eyebrow"><span class="dot"></span>Section 2 · Inventory 調整</div>
         <h2 class="h-title">你不是只在定價這一筆，而是在管理整本 book。</h2>
-        <p class="kicker">Inventory adjustment 不改變 fair value，改變的是接下一筆風險的條件。</p>
         </div>
         <div class="page-meta dim">2-4</div>
       </div>
@@ -4710,7 +4697,7 @@
         <div class="inv-grid">
           <div class="inv-panel">
             <span class="inv-tag">// CURRENT BOOK</span>
-            <h3 class="inv-name">Long calls,<br>same expiry / region</h3>
+            <h3 class="inv-name">Long calls<br>同 expiry / 區域</h3>
             <div class="inv-bar">
               <div class="bar-row">
                 <span class="bar-label">Delta</span>
@@ -4725,7 +4712,7 @@
                 <div class="bar warn"><div class="fill" style="width: 78%;"></div></div>
               </div>
               <div class="bar-row">
-                <span class="bar-label">Skew exp.</span>
+                <span class="bar-label">Skew 曝險</span>
                 <div class="bar"><div class="fill" style="width: 60%;"></div></div>
               </div>
             </div>
@@ -4741,7 +4728,7 @@
 
           <div class="inv-panel skewed">
             <span class="inv-tag">// SKEWED QUOTE</span>
-            <h3 class="inv-name">Bid pulled away,<br>ask stays close</h3>
+            <h3 class="inv-name">Bid 拉遠<br>ask 不動</h3>
             <div style="display: flex; flex-direction: column; gap: 14px; margin-top: 4px;">
               <div>
                 <span style="font-family:'JetBrains Mono',monospace;font-size:22px;color:var(--fg-dim)">NORMAL</span>
@@ -4770,7 +4757,6 @@
         <div>
           <div class="eyebrow"><span class="dot"></span>Section 2 · Flow / toxicity buffer</div>
         <h2 class="h-title">有人願意跟你成交，本身就是一個訊號。</h2>
-        <p class="kicker">Market maker 的工作不是避免成交，而是分辨流動性需求與資訊優勢。</p>
         </div>
         <div class="page-meta dim">2-6</div>
       </div>
@@ -4825,7 +4811,6 @@
         <div>
           <div class="eyebrow"><span class="dot"></span>Section 2 · Quote 調整地圖</div>
         <h2 class="h-title">Quote 是多個交易條件的合成。</h2>
-        <p class="kicker">每一個 adjustment 背後都是一個具體風險問題與一組對應 action。</p>
         </div>
         <div class="page-meta dim">2-7</div>
       </div>
@@ -4844,7 +4829,7 @@
           <div class="cell q">成交後能否便宜地 hedge？</div>
           <div class="cell action"><span class="v">widen</span><span class="v">reduce</span></div>
 
-          <div class="cell factor">Market speed</div>
+          <div class="cell factor">市場速度</div>
           <div class="cell q">Quote 會不會馬上 stale？</div>
           <div class="cell action"><span class="v">faster refresh</span><span class="v">cancel</span></div>
 
@@ -4856,7 +4841,7 @@
           <div class="cell q">出事時能不能退出？</div>
           <div class="cell action"><span class="v">lower size</span><span class="v">wider market</span></div>
 
-          <div class="cell factor">Vol uncertainty</div>
+          <div class="cell factor">Vol 不確定性</div>
           <div class="cell q">Surface 是否穩定？</div>
           <div class="cell action"><span class="v">add buffer</span><span class="v">quote selectively</span></div>
         </div>
@@ -4894,11 +4879,6 @@
           <p class="chap-hook">成交不是故事結束 — <span class="em">它是 flow diagnosis 的入口</span>。</p>
         </div>
       </div>
-
-      <div class="chap-foot">
-        <span class="meta">selection · markout · feedback loop</span>
-        <span class="arrow">→</span>
-      </div>
     </div>
   </section>
 
@@ -4912,7 +4892,6 @@
         <div>
           <div class="eyebrow"><span class="dot"></span>Section 3 · Quote → Fill</div>
           <h2 class="h-title">Quote 是你的決策，<br>fill 是<span class="em">市場的回饋</span>。</h2>
-          <p class="kicker">成交不是故事結束，而是市場開始告訴你：你的價格在它眼中是什麼。</p>
         </div>
         <div class="page-meta dim">3-1</div>
       </div>
@@ -4964,7 +4943,6 @@
         <div>
           <div class="eyebrow"><span class="dot"></span>Section 3 · 一個真實 fill 模式</div>
           <h2 class="h-title">Ask 被連續打：<span class="em">spread capture</span>，<br>還是 quote 太便宜？</h2>
-          <p class="kicker">同一串成交，可以有兩種完全相反的解讀。</p>
         </div>
         <div class="page-meta dim">3-2</div>
       </div>
@@ -4988,12 +4966,12 @@
           <div class="interp">
             <div class="interp-card">
               <span class="ic-tag">// READING A · BENIGN</span>
-              <h3 class="ic-name">Liquidity demand</h3>
+              <h3 class="ic-name">流動性需求</h3>
               <p class="ic-text">對方需要 immediacy；你收 spread 作為 liquidity premium。</p>
             </div>
             <div class="interp-card warn">
               <span class="ic-tag">// READING B · TOXIC</span>
-              <h3 class="ic-name">Stale ask</h3>
+              <h3 class="ic-name">Ask 過期</h3>
               <p class="ic-text">underlying / surface 已動，對方在買還沒更新的便宜 optionality。</p>
             </div>
           </div>
@@ -5014,7 +4992,6 @@
         <div>
           <div class="eyebrow"><span class="dot"></span>Section 3 · Flow 診斷</div>
           <h2 class="h-title">不要問<span class="em">有沒有賺到 spread</span>，<br>要問這是<span class="em">哪一種 flow</span>。</h2>
-          <p class="kicker">每一種 fill pattern 對應一個假設、一個風險、一組下一步動作。</p>
         </div>
         <div class="page-meta dim">3-4</div>
       </div>
@@ -5065,7 +5042,6 @@
         <div>
           <div class="eyebrow"><span class="dot"></span>Section 3 · Adverse Selection</div>
           <h2 class="h-title">最傷 market maker 的不是成交，<br>而是<span class="em">被錯的人成交</span>。</h2>
-          <p class="kicker">你以為自己在收 spread — 實際上是在賣<span style="color:var(--accent)">過期的價格</span>。</p>
         </div>
         <div class="page-meta dim">3-5</div>
       </div>
@@ -5145,11 +5121,6 @@
           <p class="chap-hook">單筆 edge 不代表整本安全 — <span class="em">risk lives in the book shape</span>。</p>
         </div>
       </div>
-
-      <div class="chap-foot">
-        <span class="meta">Greeks · scenarios · 集中度 · neutral 是局部</span>
-        <span class="arrow">→</span>
-      </div>
     </div>
   </section>
 
@@ -5163,7 +5134,6 @@
         <div>
           <div class="eyebrow"><span class="dot"></span>Section 4 · Fill → Book Risk</div>
           <h2 class="h-title">成交不是故事結束，<br>而是 <span class="em">book risk 的開始</span>。</h2>
-          <p class="kicker">Trade 是事件；風險是<span style="color:var(--accent)">portfolio 的形狀</span>。</p>
         </div>
         <div class="page-meta dim">4-1</div>
       </div>
@@ -5222,7 +5192,6 @@
         <div>
           <div class="eyebrow"><span class="dot"></span>Section 4 · 加總改變問題</div>
           <h2 class="h-title">每筆都有 edge，<br>整本 book 就<span class="em">安全嗎</span>？</h2>
-          <p class="kicker">連續賣出 20 口 ATM call，每筆成交價都比 theoretical value 高 1 tick。</p>
         </div>
         <div class="page-meta dim">4-2</div>
       </div>
@@ -5272,12 +5241,12 @@
                 <span class="v neg">↑ steep</span>
               </div>
               <div class="tvb-bar">
-                <span class="lbl">Strike concentration</span>
+                <span class="lbl">Strike 集中</span>
                 <div class="track"><div class="pos" style="width: 50%; background: oklch(0.6 0.13 28); opacity: 0.7;"></div></div>
                 <span class="v neg">同一段</span>
               </div>
               <div class="tvb-bar">
-                <span class="lbl">Hedge demand</span>
+                <span class="lbl">Hedge 需求</span>
                 <div class="track"><div class="pos" style="width: 48%; background: oklch(0.6 0.13 28); opacity: 0.7;"></div></div>
                 <span class="v neg">accumulating</span>
               </div>
@@ -5301,7 +5270,6 @@
         <div>
           <div class="eyebrow"><span class="dot"></span>Section 4 · 加總會掩蓋集中度</div>
           <h2 class="h-title">總 Greeks 看起來還好，<br>局部風險可能<span class="em">已經很集中</span>。</h2>
-          <p class="kicker">你是整本中性，還是只是<span style="color:var(--accent)">總數字互相抵消</span>？</p>
         </div>
         <div class="page-meta dim">4-4</div>
       </div>
@@ -5377,7 +5345,6 @@
         <div>
           <div class="eyebrow"><span class="dot"></span>Section 4 · 從定義到問題</div>
           <h2 class="h-title">Greeks 不是公式表，<br>是<span class="em">看見 book risk 的座標系</span>。</h2>
-          <p class="kicker">同樣的 delta / gamma / vega — trader 真正在問的問題不一樣。</p>
         </div>
         <div class="page-meta dim">4-5</div>
       </div>
@@ -5405,7 +5372,7 @@
           <div class="cell k">Skew · Wing</div>
           <div class="cell q">哪些 strike region 有<em>結構性風險</em>？downside / upside 哪邊裸？</div>
 
-          <div class="cell k">Liquidity bucket</div>
+          <div class="cell k">流動性 bucket</div>
           <div class="cell q">這些風險真的<em>能 hedge 或退出</em>嗎？還是只能放著？</div>
         </div>
       </div>
@@ -5424,7 +5391,6 @@
         <div>
           <div class="eyebrow"><span class="dot"></span>Section 4 · 整章的主軸</div>
           <h2 class="h-title">中性只是<span class="em">當下的截面</span>，<br>風險會隨市場路徑<span class="em">重新長出來</span>。</h2>
-          <p class="kicker" style="display:none;">.</p>
         </div>
         <div class="page-meta dim">4-7</div>
       </div>
@@ -5450,7 +5416,7 @@
             <div class="arrow">→</div>
             <div class="nil-state warn">
               <div class="meta">
-                <span class="h">After move · shape</span>
+                <span class="h">Move 之後 · shape</span>
                 <span class="lines">Δ <em>regrows</em><br>𝒱 <em>shifts</em> by bucket<br>skew <em>steepens</em></span>
               </div>
               <svg viewBox="0 0 200 100" preserveAspectRatio="none">
@@ -5495,11 +5461,6 @@
           <p class="chap-hook">看到 delta 偏掉，不代表立刻 hedge 到 0 — <span class="em">hedge 是用成本換風險形狀</span>。</p>
         </div>
       </div>
-
-      <div class="chap-foot">
-        <span class="meta">cost · execution · target range · trader override</span>
-        <span class="arrow">→</span>
-      </div>
     </div>
   </section>
 
@@ -5513,7 +5474,6 @@
         <div>
           <div class="eyebrow"><span class="dot"></span>Section 5 · Book Risk → Hedge</div>
           <h2 class="h-title">Hedge 不是反射動作，<br>是<span class="em">風險的條件交換</span>。</h2>
-          <p class="kicker">看見風險，不代表立刻把它全部消掉 — <span class="em">先問成本、急迫性、新風險</span>。</p>
         </div>
         <div class="page-meta dim">5-1</div>
       </div>
@@ -5580,7 +5540,6 @@
         <div>
           <div class="eyebrow"><span class="dot"></span>Section 5 · 現在要 hedge 嗎？</div>
           <h2 class="h-title">同樣 trading delta = +100，<br>hedge decision <span class="em">會一樣嗎</span>？</h2>
-          <p class="kicker">Delta 是一個數字 — <span class="em">hedge 是 market state 下的執行決策</span>。</p>
         </div>
         <div class="page-meta dim">5-2</div>
       </div>
@@ -5588,7 +5547,7 @@
       <div class="slide-body">
         <div class="s5case">
           <div class="s5case-top">
-            <span class="l">After fills</span>
+            <span class="l">成交後</span>
             <span class="v">trading Δ = +100 lots</span>
           </div>
 
@@ -5650,7 +5609,6 @@
         <div>
           <div class="eyebrow"><span class="dot"></span>Section 5 · Delta hedge 重新理解</div>
           <h2 class="h-title">課本裡是 replication，<br>交易室裡是<span class="em">帶成本的執行</span>。</h2>
-          <p class="kicker">理論版本假設沒有摩擦 — <span class="em">desk 版本所有摩擦都是核心</span>。</p>
         </div>
         <div class="page-meta dim">5-3</div>
       </div>
@@ -5694,7 +5652,6 @@
         <div>
           <div class="eyebrow"><span class="dot"></span>Section 5 · 要 hedge 到哪裡</div>
           <h2 class="h-title">實務上常常不是 hedge 到 0，<br>而是 hedge 到<span class="em">可承受區間</span>。</h2>
-          <p class="kicker">0 在報表上很乾淨 — <span class="em">range 才是把成本納入後的理性結果</span>。</p>
         </div>
         <div class="page-meta dim">5-6</div>
       </div>
@@ -5742,11 +5699,11 @@
 
           <div class="s5tgt-compare">
             <div class="col cls">
-              <div class="h">Classroom rule</div>
+              <div class="h">課本版本</div>
               <p>Δ → 0 · 一視同仁地把每一點 delta 追到零</p>
             </div>
             <div class="col desk">
-              <div class="h">Desk policy</div>
+              <div class="h">Desk 規則</div>
               <p>Δ → <em>target range</em> · 依 cost、liquidity、gamma、limits 而動</p>
             </div>
           </div>
@@ -5767,20 +5724,19 @@
         <div>
           <div class="eyebrow"><span class="dot"></span>Section 5 · 把決策合成</div>
           <h2 class="h-title">Hedge decision 是 delta、成本、速度<br>與 book shape 的<span class="em">合成</span>。</h2>
-          <p class="kicker">Hedge 不只是送出一筆 order — <span class="em">經常和 quote control 同時發生</span>。</p>
         </div>
         <div class="page-meta dim">5-7</div>
       </div>
 
       <div class="slide-body">
         <div class="s5dt">
-          <div class="col-h">Observed state</div>
-          <div class="col-h">Trader question</div>
-          <div class="col-h act">Action bias</div>
+          <div class="col-h">觀察狀態</div>
+          <div class="col-h">Trader 在問</div>
+          <div class="col-h act">建議動作</div>
 
           <div class="cell">Δ 小 · futures spread 寬</div>
           <div class="cell q middle">hedge cost 是否大於風險？</div>
-          <div class="cell act"><em>Wait</em> · monitor · 等 spread 收斂</div>
+          <div class="cell act"><em>Wait</em> · 觀察 · 等 spread 收斂</div>
 
           <div class="cell">Δ 中等 · spread 窄 · depth 厚</div>
           <div class="cell q middle">能不能低成本降低風險？</div>
@@ -5800,11 +5756,11 @@
 
           <div class="cell">Inventory 接近 limit</div>
           <div class="cell q middle">book 是否需要回到安全區？</div>
-          <div class="cell act">Hedge to <em>conservative target</em> · cut size</div>
+          <div class="cell act">Hedge 到 <em>保守目標</em> · 縮 size</div>
 
           <div class="cell">Quote stale / fills 疑似 toxic</div>
           <div class="cell q middle">風險來自 hedge 還是 quote 本身？</div>
-          <div class="cell act"><em>Cancel / reprice first</em>, then hedge</div>
+          <div class="cell act"><em>先 Cancel / reprice</em>，再 hedge</div>
         </div>
       </div>
 
@@ -5840,11 +5796,6 @@
           <p class="chap-hook">Δ / 𝒱 ≈ 0 — <span class="em">為什麼 P&amp;L 還會動</span>？</p>
         </div>
       </div>
-
-      <div class="chap-foot">
-        <span class="meta">gamma bleed · surface · gap · pin · 殘餘</span>
-        <span class="arrow">→</span>
-      </div>
     </div>
   </section>
 
@@ -5858,7 +5809,6 @@
         <div>
           <div class="eyebrow"><span class="dot"></span>Section 6 · Hedged Book Still Loses</div>
           <h2 class="h-title">Hedge 完不是故事結束 —<br><span class="em">是剩下的風險開始顯形</span>。</h2>
-          <p class="kicker">Hedge 是把風險<em>換形狀</em> — 不是<em>消滅</em>風險。</p>
         </div>
         <div class="page-meta dim">6-1</div>
       </div>
@@ -5901,7 +5851,7 @@
               <p style="margin:0;font-size:14px;color:var(--fg-mute);padding-top:8px;border-top:1px dashed var(--rule);">這只是「對某條軸、某個切面」的中性。</p>
             </div>
             <div class="s6after-card left">
-              <span class="h">仍然在 book 裡 / Still on the book</span>
+              <span class="h">仍然在 book 裡</span>
               <div class="nodes">
                 <div class="nd"><span class="k">Γ/Θ</span>gamma / theta trade-off</div>
                 <div class="nd"><span class="k">×</span>discrete hedging error</div>
@@ -5932,7 +5882,6 @@
         <div>
           <div class="eyebrow"><span class="dot"></span>Section 6 · 核心問題</div>
           <h2 class="h-title">Δ / 𝒱 都接近 0，<br>為什麼 P&amp;L <span class="em">還會動</span>？</h2>
-          <p class="kicker">Neutral 描述<em>你壓平了什麼</em> — P&amp;L 揭露<em>你漏掉了什麼</em>。</p>
         </div>
         <div class="page-meta dim">6-2</div>
       </div>
@@ -6008,7 +5957,6 @@
         <div>
           <div class="eyebrow"><span class="dot"></span>Section 6 · 案例 1 · 路徑 × 執行</div>
           <h2 class="h-title">Long gamma 不一定賺錢 —<br>你可能<span class="em">只是在付 hedge cost</span>。</h2>
-          <p class="kicker">市場有動，但動得不夠 — 每次 hedge 都打點付錢。</p>
         </div>
         <div class="page-meta dim">6-4</div>
       </div>
@@ -6108,7 +6056,6 @@
         <div>
           <div class="eyebrow"><span class="dot"></span>Section 6 · 案例 2 · 路徑依賴</div>
           <h2 class="h-title">同樣 realized volatility，<br>不代表同樣的 <span class="em">hedging P&amp;L</span>。</h2>
-          <p class="kicker">光有 realized vol 不夠 — <em>可 hedge 的路徑</em>才算。</p>
         </div>
         <div class="page-meta dim">6-5</div>
       </div>
@@ -6141,7 +6088,7 @@
             </div>
 
             <div class="s6paths-card b">
-              <div class="ch"><span class="tag">PATH B</span><span class="name">jump then drift · unhedgeable</span></div>
+              <div class="ch"><span class="tag">PATH B</span><span class="name">先跳空、再 drift · 不可 hedge</span></div>
               <svg viewBox="0 0 600 150" preserveAspectRatio="none">
                 <line x1="0" y1="75" x2="600" y2="75" stroke="rgba(255,255,255,0.15)" stroke-dasharray="3 4"/>
                 <!-- pre-jump flat -->
@@ -6178,7 +6125,6 @@
         <div>
           <div class="eyebrow"><span class="dot"></span>Section 6 · 案例 3 · Surface 風險</div>
           <h2 class="h-title">你 hedge 掉的是<span class="em">單一軸</span> —<br>市場動的是<span class="em">整張 surface</span>。</h2>
-          <p class="kicker">Underlying ↓ · IV ↑ · skew 變陡 · liquidity 變薄 — <em>同時發生</em>。</p>
         </div>
         <div class="page-meta dim">6-6</div>
       </div>
@@ -6258,7 +6204,6 @@
         <div>
           <div class="eyebrow"><span class="dot"></span>Section 6 · 簡短註記</div>
           <h2 class="h-title">到期不是<span class="em">風險消失</span> —<br>是<span class="em">風險轉換</span>。</h2>
-          <p class="kicker">到期不是讓風險消失 — <em>是把風險換成另一種</em>。</p>
         </div>
         <div class="page-meta dim">6-8</div>
       </div>
@@ -6266,7 +6211,7 @@
       <div class="slide-body">
         <div class="s6pin">
           <div class="s6pin-chart">
-            <span class="h">underlying near strike K · expiry day</span>
+            <span class="h">underlying 接近 strike K · 到期日</span>
             <svg viewBox="0 0 600 220" preserveAspectRatio="none">
               <!-- strike line -->
               <line x1="0" y1="110" x2="600" y2="110" stroke="rgba(217,119,87,0.6)" stroke-dasharray="4 4" stroke-width="1.5"/>
@@ -6358,11 +6303,6 @@
           <p class="chap-hook">Total P&amp;L 是結果 — <span class="em">component P&amp;L 才是診斷</span>。</p>
         </div>
       </div>
-
-      <div class="chap-foot">
-        <span class="meta">spread · delta · gamma · vega · skew · hedge · 殘餘</span>
-        <span class="arrow">→</span>
-      </div>
     </div>
   </section>
 
@@ -6376,7 +6316,6 @@
         <div>
           <div class="eyebrow"><span class="dot"></span>Section 7 · 今天 P&amp;L = +100，是好的一天嗎？</div>
           <h2 class="h-title">今天 P&amp;L = +100，<br>是 <span class="em">market making</span> 做得好嗎？</h2>
-          <p class="kicker">Total 是<em>結果</em>。Component 才是<em>診斷</em>。</p>
         </div>
         <div class="page-meta dim">7-1</div>
       </div>
@@ -6431,7 +6370,6 @@
         <div>
           <div class="eyebrow"><span class="dot"></span>Section 7 · P&amp;L attribution 是診斷報告</div>
           <h2 class="h-title">P&amp;L attribution 是<br>交易系統的 <span class="em">診斷報告</span>。</h2>
-          <p class="kicker">每一個 component 對應一個<em>可改善的決策</em> — 不是會計分錄。</p>
         </div>
         <div class="page-meta dim">7-2</div>
       </div>
@@ -6496,7 +6434,6 @@
         <div>
           <div class="eyebrow"><span class="dot"></span>Section 7 · Edge vs Luck</div>
           <h2 class="h-title">兩天都 +100 —<br>哪一天 <span class="em">值得複製</span>？</h2>
-          <p class="kicker">Total 一樣，<em>結構完全不同</em>。一個是 edge，一個是 direction luck。</p>
         </div>
         <div class="page-meta dim">7-3</div>
       </div>
@@ -6573,11 +6510,6 @@
           <p class="chap-hook">模型替<span class="em">選擇權定價</span>，交易員替<span class="em">風險定價</span>。</p>
         </div>
       </div>
-
-      <div class="chap-foot">
-        <span class="meta">風險 · trader 角色 · 收束問題 · takeaways · 提問</span>
-        <span class="arrow">→</span>
-      </div>
     </div>
   </section>
 
@@ -6591,7 +6523,6 @@
         <div>
           <div class="eyebrow"><span class="dot"></span>Section 8 · 真正傷 MM 的風險</div>
           <h2 class="h-title">真正傷 market maker 的，<br>是 <span class="em">沒準備好的市場狀態</span>。</h2>
-          <p class="kicker">波動本身不是問題 — 風險出現在<em>你沒監控、沒 buffer、沒 liquidity</em> 的地方。</p>
         </div>
         <div class="page-meta dim">8-1</div>
       </div>
@@ -6603,27 +6534,27 @@
             <span>它怎麼發生</span>
           </div>
           <div class="row">
-            <span class="name">Adverse selection</span>
+            <span class="name">逆選擇</span>
             <span class="desc">每次成交後 underlying / surface 都往 <em>不利方向</em> 走 — 你提供 liquidity，但被資訊更快的人選中。</span>
           </div>
           <div class="row">
-            <span class="name">Stale quote</span>
+            <span class="name">報價過期</span>
             <span class="desc">市場已經 move，你的 quote 還停在 <em>上一個 market state</em> — fill 看似收 spread，其實賣便宜了。</span>
           </div>
           <div class="row">
-            <span class="name">Vol regime shift</span>
+            <span class="name">Vol 結構重估</span>
             <span class="desc">你以為 vol 貴正在 short vega — 市場其實 <em>正在重估整個 risk regime</em>。</span>
           </div>
           <div class="row">
-            <span class="name">Liquidity disappearance</span>
+            <span class="name">流動性消失</span>
             <span class="desc">你最想 hedge 的時候，hedge instrument 反而 <em>沒有 depth</em> — spread 變寬、size 打不出去。</span>
           </div>
           <div class="row">
-            <span class="name">Concentration risk</span>
+            <span class="name">集中度風險</span>
             <span class="desc">總 Greeks 中性看起來安全，但局部 <em>strike / expiry bucket 已經爆掉</em> — aggregation 蓋住 concentration。</span>
           </div>
           <div class="row">
-            <span class="name">System risk</span>
+            <span class="name">系統風險</span>
             <span class="desc">data delay、quote 錯單、風控失效 — <em>一次就可能吃掉一整年 edge</em>。</span>
           </div>
         </div>
@@ -6644,7 +6575,6 @@
         <div>
           <div class="eyebrow"><span class="dot"></span>Section 8 · 那 trader 到底做什麼？</div>
           <h2 class="h-title">如果模型會算 fair value，<br>系統會自動報價，trader <span class="em">還做什麼</span>？</h2>
-          <p class="kicker">Trader 負責的是 <em>模型不會回答的那一層</em> — 風險承擔的條件。</p>
         </div>
         <div class="page-meta dim">8-2</div>
       </div>
@@ -6700,7 +6630,6 @@
       <div class="std-head">
         <div>
           <div class="eyebrow"><span class="dot"></span>Section 8 · 回到開場問題</div>
-          <p class="kicker" style="margin-top:6px;">回到開場那個問題 — 現在答案 <em>更完整</em> 了。</p>
         </div>
         <div class="page-meta dim">8-3</div>
       </div>
@@ -6783,7 +6712,6 @@
         <div>
           <div class="eyebrow"><span class="dot"></span>Section 8 · 三句帶走</div>
           <h2 class="h-title">三句帶走。</h2>
-          <p class="kicker">如果今天只能記三件事 — 就是這三句。</p>
         </div>
         <div class="page-meta dim">8-4</div>
       </div>
