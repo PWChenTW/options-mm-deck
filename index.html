@@ -62,7 +62,7 @@
   "現在我們可以回到開場那個問題：如果 Black-Scholes 是對的，為什麼 market maker 還需要 trader？開場時你們可能會想到「模型不準」「有交易成本」「波動率不是常數」「需要人工判斷」。這些都對，但答案還不完整。經過這六章，我希望你們現在的答案升級成這三句：fair value 是模型輸出 — 它給我們定價中心、Greeks、hedging intuition；quote 是風險決策 — 它反映 inventory、hedge cost、flow toxicity、market speed、liquidity、surface uncertainty；P&L 是市場回饋 — 它告訴我們哪些決策是 edge、哪些只是 luck，哪些參數需要修。Trader 的工作，就是把這三件事連起來，並且持續迭代。模型不會自動把這三件事連起來；那條 feedback loop 是 trader 的工作。",
   "在進入最後的 takeaways 之前，我想花 30 秒講一件可能違反各位直覺的事情。Market maker 一天做的決策上千次 — vol surface 調整、報價調整、hedge 觸發、limit 重設、quote width 變化。你不可能讓每一次決策都最準。買的時候有時候會買得比理論價高、有時候會買得比理論價低；hedge 有時候做得太早、有時候做得太晚 — 這些都會發生。重點不是消除這些誤差 — 重點是讓兩件事成立。第一，長期下來這些誤差不要系統性偏掉 — 也就是 zero-mean error，如果你每次都偏同一個方向，這不是 noise 是 bug。第二，不要讓單一錯誤大到無法承擔 — bounded tail loss，market maker 真正會死的不是『今天買貴了一點』，是『今天倉位爆掉沒退路』。所以這句話我覺得對你們未來進交易室或設計交易系統都很重要：不要犯大錯，比每次都最準更重要。模糊控制的精神就是這個 — 不追求單次最佳，追求系統長期穩定。整場演講背後的隱性框架，就是這個。",
   "整場演講最後留下三句話。第一，fair value 是模型輸出，quote 是交易決策輸出。沒有 fair value 你不知道中心在哪；只有 fair value 你不知道該不該成交。第二，每一筆成交都是市場對你報價的一次測試。fill 不是故事結束，它是 flow diagnosis 的入口。第三，hedging 會改變風險的形狀。delta hedge 不會讓風險消失，它只是把方向風險換成 execution cost、surface risk、gap risk、liquidity risk；剩下的風險，比「有沒有 hedge」更重要。最後一句送給各位：模型替選擇權定價，交易員替風險定價。這也是我覺得這個工作最有趣的地方 — 它不是把公式套到資料上，而是在不完整資訊下持續替風險報價，並用 P&L 回饋改善下一次決策。希望今天這場演講，能讓各位從 classroom pricing 的視角，多一條 trading desk thinking 的路徑。",
-  "進入 Q&A。台灣聽眾通常一開始比較少主動提問，所以我列了五個常見問題作為討論起點，也歡迎各位反問。Delta hedge 有最佳頻率嗎？沒有絕對答案，要看 realized vol、spread、gamma profile、risk appetite，更實務的是 target range 而不是 single frequency。如何判斷 flow toxic？看 markout、看 post-fill move、看是否集中在某 strike / expiry、看是否伴隨 cross-strike sweeping。Vol surface 是模型輸出還是 trader view？兩者都是 — model 給結構，trader 加 prior 與 stress override，特別在 low-liquidity strike 與 wing。大行情時順序？通常先 reduce quote / cancel stale orders，再小心 hedge，最後才動 vol，但這會因 desk 與產品不同。Market maker 怎麼知道自己賺的是 edge 還是 luck？這就是整場演講的核心 — 用 P&L attribution 拆，看 component 結構是否可重複，並且觀察一段時間的分佈，不要被單日結果騙到。歡迎各位提問。"
+  "進入提問時間。歡迎各位提出任何想到的問題 — 不管是定價、避險、風險管理、或是交易室的實務細節都可以。如果一時想不到，沒關係，等等可以再回來找我私下聊。謝謝各位今天的時間。"
 ]
 </script>
 <style>
@@ -6661,18 +6661,9 @@
 
       <div class="slide-body">
         <div class="s8qa">
-          <div class="s8qa-l">
+          <div class="s8qa-l" style="grid-column: 1 / -1; text-align: center;">
             <h2 class="big"><span class="em">提問時間</span></h2>
-            <p class="sub">如果還沒想到，這幾個是討論起點 — 我也會反問各位。</p>
             <p class="thanks">謝謝各位</p>
-          </div>
-          <div class="s8qa-r">
-            <span class="h">DISCUSSION STARTERS</span>
-            <p class="q">Delta hedge 有 <span class="em">最佳頻率</span> 嗎？</p>
-            <p class="q">如何判斷 flow <span class="em">toxic</span>？</p>
-            <p class="q">Vol surface 是 <span class="em">模型輸出</span> 還是 <span class="em">trader view</span>？</p>
-            <p class="q">大行情時 — 先 hedge、先撤單，還是 <span class="em">先調 vol</span>？</p>
-            <p class="q">Market maker 怎麼知道自己賺的是 <span class="em">edge 還是 luck</span>？</p>
           </div>
         </div>
       </div>
