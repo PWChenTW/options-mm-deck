@@ -4006,9 +4006,10 @@
     border-bottom: 1px dashed var(--rule);
   }
   .fuzzy-errors-block .lead {
-    font-size: 44px; font-weight: 500;
+    font-size: 30px; font-weight: 500;
     color: var(--fg-mute);
     line-height: 1.2;
+    white-space: nowrap;
   }
   .fuzzy-errors {
     display: grid;
@@ -4023,9 +4024,10 @@
     border-left: 3px solid #c46a52;
   }
   .fuzzy-errors-block .tail {
-    font-size: 44px; font-weight: 600;
-    color: var(--fg); line-height: 1.2;
-    text-align: right;
+    font-size: 30px; font-weight: 500;
+    color: var(--fg-mute); line-height: 1.2;
+    text-align: left;
+    white-space: nowrap;
   }
   .fuzzy-errors-block .tail .em { color: var(--fg); }
 
@@ -4034,21 +4036,24 @@
     padding-bottom: 8px;
   }
   .fuzzy-principles .h {
-    font-size: 30px; color: var(--fg-mute);
-    margin: 0; line-height: 1.3;
+    font-size: 28px; color: var(--fg-mute);
+    margin: 0 0 4px; line-height: 1.3;
+    letter-spacing: 0.02em;
   }
   .fuzzy-principles .p {
     display: grid;
     grid-template-columns: 60px 1fr;
     gap: 16px;
     align-items: baseline;
-    font-size: 32px; color: var(--fg);
-    line-height: 1.35;
+    font-size: 36px; color: var(--fg);
+    line-height: 1.4;
+    font-weight: 500;
   }
   .fuzzy-principles .p .k {
     font-family: "JetBrains Mono", monospace;
-    font-size: 22px; color: var(--fg);
+    font-size: 26px; color: var(--fg-mute);
     letter-spacing: 0.06em;
+    font-weight: 400;
   }
   .fuzzy-principles .p em { color: var(--fg); font-style: normal; }
 
@@ -6583,7 +6588,7 @@
           <div class="e">hedge 得<em style="color:#c46a52;font-style:normal;">太早</em></div>
           <div class="e">hedge 得<em style="color:#c46a52;font-style:normal;">太晚</em></div>
         </div>
-        <p class="tail"><span class="em">都會</span><br>發生。</p>
+        <p class="tail">— 都會發生。</p>
       </div>
 
       <div class="fuzzy-principles">
