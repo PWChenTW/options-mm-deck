@@ -60,7 +60,6 @@
   "那 trader 在這套 setup 裡到底做什麼？模型會算 fair value，系統會自動報價，pricing engine 比你快、比你穩、不會累。Trader 真正負責的是模型不會回答的那一層 — 風險承擔的條件。什麼時候相信模型、什麼時候 override；quote 要加多少 edge / buffer 才能對得起 risk profile；inventory 到什麼程度要調整報價甚至停掉某些 strikes；什麼 flow 可以接、什麼 flow 是 toxic 要躲；hedge 何時做、做到哪裡、用什麼工具；昨天的 P&L 哪一塊是 edge、哪一塊是 luck；什麼市場狀態下要 reduce size、widen、甚至 stop quoting；以及把 attribution 真的帶回明天的 quote 與 hedge 規則裡。Trader 的價值不是手算 BS，也不是比 model 算得快，而是把 model 放回有摩擦、有對手選擇、有流動性限制的世界裡，做一連串風險承擔決策。",
   "現在我們可以回到開場那個問題：如果 Black-Scholes 是對的，為什麼 market maker 還需要 trader？開場時你們可能會想到「模型不準」「有交易成本」「波動率不是常數」「需要人工判斷」。這些都對，但答案還不完整。經過這六章，我希望你們現在的答案升級成這三句：fair value 是模型輸出 — 它給我們定價中心、Greeks、hedging intuition；quote 是風險決策 — 它反映 inventory、hedge cost、flow toxicity、market speed、liquidity、surface uncertainty；P&L 是市場回饋 — 它告訴我們哪些決策是 edge、哪些只是 luck，哪些參數需要修。Trader 的工作，就是把這三件事連起來，並且持續迭代。模型不會自動把這三件事連起來；那條 feedback loop 是 trader 的工作。",
   "在進入最後的 takeaways 之前，我想花 30 秒講一件可能違反各位直覺的事情。Market maker 一天做的決策上千次 — vol surface 調整、報價調整、hedge 觸發、limit 重設、quote width 變化。你不可能讓每一次決策都最準。買的時候有時候會買得比理論價高、有時候會買得比理論價低；hedge 有時候做得太早、有時候做得太晚 — 這些都會發生。重點不是消除這些誤差 — 重點是讓兩件事成立。第一，長期下來這些誤差不要系統性偏掉 — 也就是 zero-mean error，如果你每次都偏同一個方向，這不是 noise 是 bug。第二，不要讓單一錯誤大到無法承擔 — bounded tail loss，market maker 真正會死的不是『今天買貴了一點』，是『今天倉位爆掉沒退路』。所以這句話我覺得對你們未來進交易室或設計交易系統都很重要：不要犯大錯，比每次都最準更重要。模糊控制的精神就是這個 — 不追求單次最佳，追求系統長期穩定。整場演講背後的隱性框架，就是這個。",
-  "整場演講最後留下三句話。第一，fair value 是模型輸出，quote 是交易決策輸出。沒有 fair value 你不知道中心在哪；只有 fair value 你不知道該不該成交。第二，每一筆成交都是市場對你報價的一次測試。fill 不是故事結束，它是 flow diagnosis 的入口。第三，hedging 會改變風險的形狀。delta hedge 不會讓風險消失，它只是把方向風險換成 execution cost、surface risk、gap risk、liquidity risk；剩下的風險，比「有沒有 hedge」更重要。最後一句送給各位：模型替選擇權定價，交易員替風險定價。這也是我覺得這個工作最有趣的地方 — 它不是把公式套到資料上，而是在不完整資訊下持續替風險報價，並用 P&L 回饋改善下一次決策。希望今天這場演講，能讓各位從 classroom pricing 的視角，多一條 trading desk thinking 的路徑。",
   "進入提問時間。歡迎各位提出任何想到的問題 — 不管是定價、避險、風險管理、或是交易室的實務細節都可以。如果一時想不到，沒關係，等等可以再回來找我私下聊。謝謝各位今天的時間。"
 ]
 </script>
@@ -4206,6 +4205,53 @@
   .tc-result.good { color: var(--fg); }
   .tc-result.bad { color: #c46a52; }
 
+
+  /* Closing merged (question + 3 takeaways + punchline) */
+  .closing-final {
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    height: 100%;
+    gap: 40px;
+  }
+  .cf-ask {
+    font-size: 56px; font-weight: 600;
+    line-height: 1.2;
+    color: var(--fg); text-align: center;
+    text-wrap: balance; margin: 0;
+  }
+  .cf-ask .em { color: var(--accent); }
+  .cf-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 28px;
+    align-items: stretch;
+  }
+  .cf-card {
+    background: var(--bg-soft);
+    border: 1px solid var(--rule);
+    padding: 28px 28px;
+    display: flex; flex-direction: column;
+    gap: 14px;
+  }
+  .cf-card .num {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 22px; color: var(--accent);
+    letter-spacing: 0.1em;
+  }
+  .cf-card h3 {
+    font-size: 28px; font-weight: 500;
+    line-height: 1.35; color: var(--fg);
+    margin: 0; text-wrap: balance;
+  }
+  .cf-card h3 .em { color: var(--accent); }
+  .cf-line {
+    font-size: 48px; font-weight: 600;
+    line-height: 1.2; color: var(--fg);
+    text-align: center; margin: 0;
+    text-wrap: balance;
+  }
+  .cf-line .em { color: var(--accent); }
+
 </style>
 </head>
 <body>
@@ -6559,8 +6605,23 @@
       </div>
 
       <div class="slide-body">
-        <div class="s8close">
-          <h2 class="ask">如果 Black-Scholes 是對的，<br>為什麼 market maker <span class="em">還需要 trader</span>？</h2>
+        <div class="closing-final">
+          <h2 class="cf-ask">如果 Black-Scholes 是對的，<br>為什麼 market maker <span class="em">還需要 trader</span>？</h2>
+          <div class="cf-grid">
+            <div class="cf-card">
+              <span class="num">01</span>
+              <h3>Fair value 是模型輸出，<br><span class="em">quote 是交易決策輸出</span>。</h3>
+            </div>
+            <div class="cf-card">
+              <span class="num">02</span>
+              <h3>每一筆成交，都是市場對<br><span class="em">報價的一次測試</span>。</h3>
+            </div>
+            <div class="cf-card">
+              <span class="num">03</span>
+              <h3>Hedging 會 <span class="em">改變風險的形狀</span>，<br>不會讓風險消失。</h3>
+            </div>
+          </div>
+          <p class="cf-line"><span class="em">模型替選擇權定價</span>，<span class="em">交易員替風險定價</span>。</p>
         </div>
       </div>
 
@@ -6606,46 +6667,6 @@
 
       <div class="fuzzy-kicker">
         <p class="big"><span class="em">不要犯大錯</span>，<br>比每次都最準更重要。</p>
-      </div>
-    </div>
-  </section>
-
-
-  <!-- ============================================================ -->
-  <!-- Slide 8-4 · Final Takeaways                                   -->
-  <!-- ============================================================ -->
-  <section data-screen-label="58 · Final Takeaways">
-    <div class="slide-std">
-      <div class="std-head">
-        <div>
-          <h2 class="h-title">三句帶走。</h2>
-        </div>
-      </div>
-
-      <div class="slide-body">
-        <div class="s8final">
-          <div class="s8final-grid">
-            <div class="s8final-card">
-              <span class="num">01</span>
-              <h3 class="h">Fair value 是模型輸出，<br><span class="em">quote 是交易決策輸出</span>。</h3>
-              
-            </div>
-            <div class="s8final-card">
-              <span class="num">02</span>
-              <h3 class="h">每一筆成交，都是市場對<br><span class="em">報價的一次測試</span>。</h3>
-              
-            </div>
-            <div class="s8final-card">
-              <span class="num">03</span>
-              <h3 class="h">Hedging 會 <span class="em">改變風險的形狀</span>，<br>不會讓風險消失。</h3>
-              
-            </div>
-          </div>
-          <p class="s8final-line"><span class="em">模型替選擇權定價</span>，<span class="em">交易員替風險定價</span>。</p>
-        </div>
-      </div>
-
-      <div class="std-foot">
       </div>
     </div>
   </section>
