@@ -17,7 +17,6 @@
   "第二個追加條件 — what if 過去 1 分鐘你的 ask 已經連續被打 200 口？也就是說，市場上有人在不斷掃你的 ask，這通常代表兩件事之一：要嘛 fair value 已經往上動了你沒跟上，要嘛對方比你更快知道某個訊號。注意：這時候你的 inventory 也已經 short 了 200 口 call。問題：還繼續報原本的 quote 嗎？想改答案的舉手 — 為什麼？這個 what-if 對應到的是 flow toxicity 和 adverse selection，是 Section 3 的核心。→ Ask 連續被打 = quote 可能 stale 或 toxic，正解是拉遠 ask 或暫撤、檢查 fair value 是否落後。",
   "第三個追加條件 — what if 你的累積 short call position 已經到 2000 口，接近 inventory limit？仔細想：A、B、C、D 哪一個還合理？A 是雙邊正常 quote — 但你不想再 short 更多 call，所以 ask 應該拉遠或縮小 size。B 是雙邊寬報 — 沒解決 skew 問題。C 緊報 — 直接放棄。D 不報 — 安全但不能 unwind position。等等，正解可能不在這 4 個裡 — 答案應該是 skew：bid 拉近、ask 拉遠，讓自己更容易買、不容易再賣。這就是 Section 2 會講的 inventory adjustment — quote 不只是 spread 寬度，還有不對稱性。如果剛剛已經有同學想到 skew 那很棒，這就是接下來整場要拆的東西。",
   "第四個追加條件 — what if 距離結算只剩 1 小時？這時候 gamma 會爆炸 — 因為到期前 ATM option 的 delta 對 underlying 變動非常敏感，underlying 動一點 delta 就翻；同時還有 pin risk — 如果結算價剛好在 strike 附近，行權與不行權的結果完全不同。問題：在這種狀態下，你還想接 flow 嗎？大部分有經驗的 trader 答案會傾向 D（撤、不報）— 因為短時間的 pin risk 是 hedge 來不及的。這對應 Section 6 的 pin risk。→ 短時間 pin + gamma 爆炸時，多數有經驗 trader 會選 D（暫撤）— 因為剩 1 小時 hedge 來不及。",
-  "現在我們有 4 個 what-if 同時擺在桌上。注意一件事：同樣的 fair value 100、同樣的 4 個選項 — 在不同的條件組合下，合理答案完全不同。沒有一個 quote 是『正確答案』，每一個都會在某些 market state 下變成最好的選擇。這正是 market maker 真正在做的事 — 不是把模型算更準，而是在當下這個市場狀態下，決定要不要承擔這筆風險、用什麼價格、多少 size、什麼時候停。接下來 50 分鐘，我們就是要把這個『取決於市場狀態的決策過程』，一步一步拆開來看。",
   "如果我們在課堂上學到 Black-Scholes，直覺上好像很多問題都被解掉了。你有 fair value，你有 Greeks，你知道怎麼做 delta hedge，甚至在理論裡可以複製 payoff。那為什麼一個 market making desk 還需要 trader？這個問題不是在質疑 Black-Scholes 的正確性。實務上，對單一 option、單一時間點，我們仍然常常用 Black-Scholes 的語言在算價格、IV 和 Greeks。真正的問題是：會算 BS price，只解決了 pricing 的一部分；交易員面對的是把 pricing 放進市場後的 risk-taking problem。模型可以告訴你這個 option 在某些假設下值多少錢，但它不會自動告訴你：現在要不要報價、報多寬、掛多少 size、成交後要不要 hedge、hedge 到哪裡、這個 flow 是正常需求還是你被資訊更快的人打了。這頁我會停 5 到 10 秒，問問各位：你們覺得 trader 還需要做什麼？",
   "假設模型告訴你，這個 ATM call 的 theoretical value 是 100。我給各位看兩個 market state。Case A：你的 book 很乾淨，futures spread 很窄，市場平穩，最近 flow 都是正常需求。Case B 完全不同：你已經 long 很多 call，futures 正在快速上漲，hedge cost 升高，同一段 strike 剛剛連續被掃 ask。注意，兩個情境模型 theoretical value 都是 100。停三秒，各位心裡先回答自己：你真的會在這兩個 state 報一樣的 bid/ask 嗎？",
   "答案揭曉。大部分有經驗的交易員會說『不會』。為什麼？Fair value 給你一個中心，但 quote 反映的是你在這個 market state 下、願意承擔風險的條件。Case A 你可能正常雙邊報；Case B 你會把 ask 拉遠、bid 縮 size、甚至撤單 — quote 變成 skewed、smaller、更保守。同樣 100 的 fair value，不同的 quote。這就是整場演講要拆的核心問題：fair value 之外，quote 還承擔什麼？接下來七章，我們一層一層剝開。",
@@ -4294,31 +4293,6 @@
         <div class="qc-whatif past"><span class="idx">2</span><span class="cond">過去 1 分鐘賣了 <em>200 口</em></span></div>
         <div class="qc-whatif past"><span class="idx">3</span><span class="cond">累積 position <em>2000 口</em></span></div>
         <div class="qc-whatif now"><span class="idx">4</span><span class="cond"><em>1 小時後</em>結算</span></div>
-      </div>
-    </div>
-  </section>
-
-
-  <!-- ============================================================ -->
-  <!-- Slide QC-6 · Synthesis                                        -->
-  <!-- ============================================================ -->
-  <section data-screen-label="QC-6 · Synthesis">
-    <div class="slide-qc">
-      <div class="qc-state">
-        <p class="ask">Theo = 100。你會掛什麼 <span class="em">quote</span>？</p>
-        <p class="info">同樣 fair value<br>4 個條件層層疊上</p>
-      </div>
-      <div class="qc-options">
-        <div class="qc-opt"><span class="k">A</span><span class="v">99 / 101</span><span class="d">標準窄報</span></div>
-        <div class="qc-opt"><span class="k">B</span><span class="v">95 / 105</span><span class="d">寬到極致</span></div>
-        <div class="qc-opt"><span class="k">C</span><span class="v">99.5 / 100.5</span><span class="d">緊報搶 fill</span></div>
-        <div class="qc-opt"><span class="k">D</span><span class="v">不報</span><span class="d">等等再說</span></div>
-      </div>
-      <div class="qc-whatifs">
-        <div class="qc-whatif past"><span class="idx">1</span><span class="cond">期貨 spread <em>1 → 5 ticks</em></span></div>
-        <div class="qc-whatif past"><span class="idx">2</span><span class="cond">過去 1 分鐘賣了 <em>200 口</em></span></div>
-        <div class="qc-whatif past"><span class="idx">3</span><span class="cond">累積 position <em>2000 口</em></span></div>
-        <div class="qc-whatif past"><span class="idx">4</span><span class="cond"><em>1 小時後</em>結算</span></div>
       </div>
     </div>
   </section>
