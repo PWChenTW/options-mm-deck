@@ -4139,6 +4139,73 @@
   .iq-row.future .iq-num { color: var(--fg-dim); opacity: 0.3; }
   .iq-row.future .iq-text { visibility: hidden; }
 
+
+  /* Toxic flow comparison (P23) */
+  .toxic-compare {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+    height: 100%;
+  }
+  .tc-col {
+    background: var(--bg-soft);
+    border: 1px solid var(--rule);
+    padding: 28px 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .tc-col.toxic {
+    border-color: color-mix(in oklch, #c46a52 35%, var(--rule));
+    background: linear-gradient(180deg, rgba(196,106,82,0.05), var(--bg-soft) 60%);
+  }
+  .tc-tag {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 22px;
+    color: var(--fg-dim);
+    letter-spacing: 0.08em;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--rule);
+  }
+  .tc-col.toxic .tc-tag { color: #c46a52; }
+  .tc-row {
+    display: grid;
+    grid-template-columns: 72px 1fr;
+    gap: 16px;
+    align-items: baseline;
+    padding: 6px 0;
+  }
+  .tc-row .ts {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 24px;
+    color: var(--fg-dim);
+  }
+  .tc-row .ev {
+    font-size: 26px;
+    color: var(--fg);
+    line-height: 1.35;
+    font-family: "JetBrains Mono", monospace;
+  }
+  .tc-row .det {
+    display: block;
+    margin-top: 4px;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 18px;
+    color: var(--fg-mute);
+  }
+  .tc-row.warn .ev { color: var(--fg); }
+  .tc-row.warn .det { color: #c46a52; }
+  .tc-result {
+    margin-top: auto;
+    padding: 16px 0 4px;
+    border-top: 1px dashed var(--rule);
+    font-size: 30px;
+    font-weight: 500;
+    text-align: center;
+  }
+  .tc-result.good { color: var(--fg); }
+  .tc-result.bad { color: #c46a52; }
+
 </style>
 </head>
 <body>
@@ -4876,7 +4943,7 @@
   <!-- ============================================================ -->
   <!-- Slide 3-2 · Ask 連續被打                                      -->
   <!-- ============================================================ -->
-  <section data-screen-label="20 · Ask Repeatedly Lifted">
+  <section data-screen-label="20 · Ask Repeatedly Lifted" data-deck-skip>
     <div class="slide-std">
       <div class="std-head">
         <div>
@@ -4923,7 +4990,7 @@
   <!-- ============================================================ -->
   <!-- Slide 3-4 · Flow Diagnosis Map                               -->
   <!-- ============================================================ -->
-  <section data-screen-label="22 · Flow Diagnosis Map" data-deck-skip>
+  <section data-screen-label="22 · Flow Diagnosis Map">
     <div class="slide-std">
       <div class="std-head">
         <div>
@@ -4971,53 +5038,31 @@
   <!-- ============================================================ -->
   <!-- Slide 3-5 · Adverse Selection                                -->
   <!-- ============================================================ -->
-  <section data-screen-label="23 · Adverse Selection">
+  <section data-screen-label="23 · Toxic Flow">
     <div class="slide-std">
       <div class="std-head">
         <div>
-          <h2 class="h-title">最傷 market maker 的不是成交，<br>而是<span class="em">被錯的人成交</span>。</h2>
+          <h2 class="h-title"><span class="em">Toxic flow</span>：成交後 fair value <br>持續往<span class="em">不利方向</span>走。</h2>
         </div>
       </div>
 
       <div class="slide-body">
-        <div class="as-timeline">
-          <div class="as-axis"><span class="arrow-end">→ time</span></div>
-          <div class="as-events">
-            <div class="as-event">
-              <span class="ts">// t₀</span>
-              <p class="ev">Quote ask = 101</p>
-              <span class="det">theo = 100</span>
-            </div>
-            <div class="as-event warn">
-              <span class="ts">// t₁</span>
-              <p class="ev">被更快的 flow 打掉</p>
-              <span class="det">someone buys 101</span>
-            </div>
-            <div class="as-event warn">
-              <span class="ts">// t₂</span>
-              <p class="ev">Fair value → 103</p>
-              <span class="det">underlying / vol moved</span>
-            </div>
-            <div class="as-event dim">
-              <span class="ts">// t₃</span>
-              <p class="ev">Hedge / reprice late</p>
-              <span class="det">already behind market</span>
-            </div>
+        <div class="toxic-compare">
+          <div class="tc-col">
+            <div class="tc-tag">// BENIGN FLOW</div>
+            <div class="tc-row"><span class="ts">t₀</span><span class="ev">quote 99 / 101<span class="det">theo = 100</span></span></div>
+            <div class="tc-row"><span class="ts">t₁</span><span class="ev">sold @ 101<span class="det">paper edge = +1</span></span></div>
+            <div class="tc-row"><span class="ts">t₂</span><span class="ev">theo 還在 100<span class="det">沒 markout</span></span></div>
+            <div class="tc-row"><span class="ts">t₃</span><span class="ev">收 spread<span class="det">net = +1</span></span></div>
+            <div class="tc-result good">收到 spread</div>
           </div>
-        </div>
-
-        <div class="as-pl">
-          <div class="cell">
-            <span class="lab">// SPREAD CAPTURE</span>
-            <span class="val pos">+1.0</span>
-          </div>
-          <div class="cell">
-            <span class="lab">// MARKOUT (FAIR MOVED 100 → 103)</span>
-            <span class="val neg">−3.0</span>
-          </div>
-          <div class="cell">
-            <span class="lab">// NET</span>
-            <span class="val net">−2.0</span>
+          <div class="tc-col toxic">
+            <div class="tc-tag">// TOXIC FLOW</div>
+            <div class="tc-row"><span class="ts">t₀</span><span class="ev">quote 99 / 101<span class="det">theo = 100</span></span></div>
+            <div class="tc-row"><span class="ts">t₁</span><span class="ev">sold @ 101<span class="det">paper edge = +1</span></span></div>
+            <div class="tc-row warn"><span class="ts">t₂</span><span class="ev">theo → 103<span class="det">markout = -2</span></span></div>
+            <div class="tc-row warn"><span class="ts">t₃</span><span class="ev">hedge late<span class="det">net = -1</span></span></div>
+            <div class="tc-result bad">賣便宜了</div>
           </div>
         </div>
       </div>
