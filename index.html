@@ -4817,7 +4817,7 @@
         <div class="chap-num">02</div>
         <div class="chap-text">
           <h1 class="chap-title">Quote <span class="arrow">→</span> Fill</h1>
-          <p class="chap-hook">成交不是故事結束 — <span class="em">它是 flow diagnosis 的入口</span>。</p>
+          <p class="chap-hook">成交不是故事結束 — <span class="em">它是判讀 flow 的入口</span>。</p>
         </div>
       </div>
     </div>
@@ -4838,33 +4838,33 @@
       <div class="slide-body">
         <div class="qf-pipeline" style="grid-template-columns: 1fr auto 1fr auto 1fr auto 1fr;">
           <div class="qf-stage">
-            <span class="qf-tag">// YOUR DECISION</span>
+            <span class="qf-tag">// 你的決策</span>
             <h3 class="qf-name">Quote</h3>
-            <p class="qf-detail">price + size<br>+ conditions</p>
+            <p class="qf-detail">價格 + size<br>+ 條件</p>
           </div>
           <div class="qf-arrow">→</div>
           <div class="qf-stage middle">
-            <span class="qf-tag">// MARKET</span>
-            <h3 class="qf-name"><span class="em">Selection</span></h3>
-            <p class="qf-detail">someone chooses<br>to trade with you</p>
+            <span class="qf-tag">// 市場</span>
+            <h3 class="qf-name"><span class="em">被選中</span></h3>
+            <p class="qf-detail">對方選擇<br>跟你成交</p>
           </div>
           <div class="qf-arrow">→</div>
           <div class="qf-stage">
-            <span class="qf-tag">// EVENT</span>
+            <span class="qf-tag">// 事件</span>
             <h3 class="qf-name">Fill</h3>
-            <p class="qf-detail">execution<br>+ post-fill path</p>
+            <p class="qf-detail">成交<br>+ 成交後走勢</p>
           </div>
           <div class="qf-arrow">→</div>
           <div class="qf-stage">
-            <span class="qf-tag">// RESPONSE</span>
-            <h3 class="qf-name">Diagnosis</h3>
-            <p class="qf-detail">benign /<br>toxic ?</p>
+            <span class="qf-tag">// 回應</span>
+            <h3 class="qf-name">診斷</h3>
+            <p class="qf-detail">benign 還是<br>toxic ?</p>
           </div>
         </div>
 
         <div style="margin-top: 28px; display: flex; align-items: center; justify-content: center; gap: 24px; font-family: 'JetBrains Mono', monospace; font-size: 24px; color: var(--fg-mute);">
           <span style="color: var(--fg-dim)">→</span>
-          <span>Next Quote — calibrated by what the last fill just told you.</span>
+          <span>下一個 quote — 根據上一筆 fill 給的資訊校準。</span>
         </div>
       </div>
 
@@ -4887,29 +4887,29 @@
       <div class="slide-body">
         <div class="case-grid">
           <div class="case-setup">
-            <span class="cs-tag">// SETUP</span>
+            <span class="cs-tag">// 設定</span>
             <div class="cs-line"><span class="dim">theo</span> &nbsp;= <span class="acc">100</span></div>
             <div class="cs-line"><span class="dim">quote</span><br>&nbsp;<span class="acc">99</span> / <span class="acc">101</span><br>&nbsp;size 50 × 50</div>
           </div>
 
           <div class="tape">
-            <div class="tape-head">// EXECUTION TAPE · YOUR ASK</div>
+            <div class="tape-head">// 成交序列 · 你的 ask</div>
             <div class="tape-row fill"><span class="ts">10:01:03</span><span class="side">SELL</span><span class="sz">10</span><span class="px">@ 101</span></div>
             <div class="tape-row fill"><span class="ts">10:01:04</span><span class="side">SELL</span><span class="sz">15</span><span class="px">@ 101</span></div>
             <div class="tape-row fill"><span class="ts">10:01:05</span><span class="side">SELL</span><span class="sz">20</span><span class="px">@ 101</span></div>
-            <div style="margin-top: 6px; font-family: 'JetBrains Mono', monospace; font-size: 22px; color: var(--fg-dim);">// paper edge per fill = +1 tick</div>
+            <div style="margin-top: 6px; font-family: 'JetBrains Mono', monospace; font-size: 22px; color: var(--fg-dim);">// 每筆 paper edge = +1 tick</div>
           </div>
 
           <div class="interp">
             <div class="interp-card">
-              <span class="ic-tag">// READING A · BENIGN</span>
+              <span class="ic-tag">// 解讀 A · 正常 flow</span>
               <h3 class="ic-name">流動性需求</h3>
-              <p class="ic-text">對方需要 immediacy；你收 spread 作為 liquidity premium。</p>
+              <p class="ic-text">對方需要立刻成交；你收 spread 作為立即性的補償。</p>
             </div>
             <div class="interp-card warn">
-              <span class="ic-tag">// READING B · TOXIC</span>
+              <span class="ic-tag">// 解讀 B · toxic flow</span>
               <h3 class="ic-name">Ask 過期</h3>
-              <p class="ic-text">underlying / surface 已動，對方在買還沒更新的便宜 optionality。</p>
+              <p class="ic-text">underlying / surface 已動，對方在買還沒更新的便宜選擇權。</p>
             </div>
           </div>
         </div>
