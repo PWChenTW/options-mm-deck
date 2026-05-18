@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<title>Speaker Notes · 從 PDE 到 P&L</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:        #0e0e10;
+    --bg-soft:   #16161a;
+    --fg:        #ece8e1;
+    --fg-mute:   #a39d91;
+    --fg-dim:    #6b6659;
+    --rule:      #2a2a30;
+    --accent:    oklch(0.74 0.12 65);
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg); color: var(--fg);
+    font-family: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", system-ui, sans-serif;
+    font-weight: 400;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+  }
+  .wrap {
+    max-width: 920px;
+    margin: 0 auto;
+    padding: 32px 32px 120px;
+  }
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 24px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid var(--rule);
+    margin-bottom: 28px;
+  }
+  .meta {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 18px;
+    color: var(--accent);
+    letter-spacing: 0.04em;
+    flex-shrink: 0;
+  }
+  .title {
+    font-size: 18px;
+    color: var(--fg-mute);
+    text-align: right;
+    line-height: 1.35;
+  }
+  .note {
+    font-size: 22px;
+    line-height: 1.85;
+    color: var(--fg);
+    text-wrap: pretty;
+  }
+  .note.empty {
+    color: var(--fg-dim);
+    font-style: italic;
+  }
+  .next-preview {
+    margin-top: 48px;
+    padding-top: 24px;
+    border-top: 1px dashed var(--rule);
+    font-size: 16px;
+    color: var(--fg-dim);
+    line-height: 1.6;
+  }
+  .next-preview .lbl {
+    display: block;
+    font-family: "JetBrains Mono", monospace;
+    color: var(--fg-mute);
+    font-size: 13px;
+    letter-spacing: 0.08em;
+    margin-bottom: 8px;
+  }
+  /* Bottom nav */
+  .nav {
+    position: fixed;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    background: rgba(22,22,26,0.94);
+    padding: 12px 18px;
+    border: 1px solid var(--rule);
+    border-radius: 999px;
+    backdrop-filter: blur(8px);
+  }
+  .nav button {
+    background: transparent;
+    color: var(--fg);
+    border: 1px solid var(--fg-dim);
+    padding: 6px 14px;
+    border-radius: 999px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 14px;
+  }
+  .nav button:hover { border-color: var(--fg); }
+  .nav input {
+    width: 56px;
+    text-align: center;
+    background: transparent;
+    color: var(--fg);
+    border: 1px solid var(--fg-dim);
+    padding: 6px;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 14px;
+    border-radius: 4px;
+  }
+  .hint {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 12px;
+    color: var(--fg-dim);
+    margin-left: 6px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="meta" id="meta">— / —</div>
+    <div class="title" id="title"></div>
+  </header>
+  <div class="note" id="note">Loading...</div>
+  <div class="next-preview" id="nextPreview" style="display:none;">
+    <span class="lbl">NEXT</span>
+    <span id="nextText"></span>
+  </div>
+</div>
+<div class="nav">
+  <button onclick="go(-1)">←</button>
+  <input id="jump" type="number" min="1" />
+  <button onclick="go(1)">→</button>
+  <span class="hint">← → / space / 數字</span>
+</div>
+<script>
+let notes = [];
+let titles = [];
+let idx = 0;
+
+async function load() {
+  try {
+    const resp = await fetch('./index.html');
+    const html = await resp.text();
+    const noteMatch = html.match(/<script type="application\/json" id="speaker-notes">\s*([\s\S]*?)\s*<\/script>/);
+    notes = JSON.parse(noteMatch[1]);
+    const labelMatches = [...html.matchAll(/<section data-screen-label="([^"]+)"/g)];
+    titles = labelMatches.map(m => m[1]);
+  } catch (e) {
+    document.getElementById('note').textContent = 'Failed to load notes: ' + e.message;
+    return;
+  }
+  const h = location.hash.match(/^#(\d+)$/);
+  idx = h ? Math.max(0, Math.min(notes.length - 1, parseInt(h[1]) - 1)) : 0;
+  render();
+}
+
+function render() {
+  document.getElementById('meta').textContent = `${idx + 1} / ${notes.length}`;
+  document.getElementById('title').textContent = titles[idx] || '';
+  const noteEl = document.getElementById('note');
+  const content = notes[idx];
+  if (!content || !content.trim()) {
+    noteEl.textContent = '(no speaker note)';
+    noteEl.classList.add('empty');
+  } else {
+    noteEl.textContent = content;
+    noteEl.classList.remove('empty');
+  }
+  // Next preview
+  const np = document.getElementById('nextPreview');
+  if (idx + 1 < notes.length) {
+    np.style.display = '';
+    document.getElementById('nextText').textContent = titles[idx + 1] || '';
+  } else {
+    np.style.display = 'none';
+  }
+  document.getElementById('jump').value = idx + 1;
+  if (location.hash !== `#${idx + 1}`) {
+    history.replaceState(null, '', `#${idx + 1}`);
+  }
+  window.scrollTo(0, 0);
+}
+
+function go(delta) {
+  const next = idx + delta;
+  if (next < 0 || next >= notes.length) return;
+  idx = next;
+  render();
+}
+
+document.getElementById('jump').addEventListener('change', (e) => {
+  const n = parseInt(e.target.value);
+  if (n >= 1 && n <= notes.length) {
+    idx = n - 1;
+    render();
+  }
+});
+
+document.addEventListener('keydown', (e) => {
+  if (e.target.tagName === 'INPUT') return;
+  if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') {
+    go(1); e.preventDefault();
+  } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+    go(-1); e.preventDefault();
+  } else if (e.key === 'Home') {
+    idx = 0; render(); e.preventDefault();
+  } else if (e.key === 'End') {
+    idx = notes.length - 1; render(); e.preventDefault();
+  }
+});
+
+window.addEventListener('hashchange', () => {
+  const h = location.hash.match(/^#(\d+)$/);
+  if (h) {
+    idx = Math.max(0, Math.min(notes.length - 1, parseInt(h[1]) - 1));
+    render();
+  }
+});
+
+load();
+</script>
+</body>
+</html>
